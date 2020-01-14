@@ -10,3 +10,8 @@ TLA+ Spec for the Cure Key-Value Store
 - `Value`
   - does not matter
   - can be eliminated
+  - Now: `Value = {v}`
+- Client-server interaction
+  - using `msgs`
+  - well-formedness of clients
+- "wait until"

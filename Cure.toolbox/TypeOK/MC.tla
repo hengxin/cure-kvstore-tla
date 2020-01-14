@@ -18,7 +18,7 @@ k1, k2
 
 \* MV CONSTANT declarations@modelParameterConstants
 CONSTANTS
-v1, v2
+v1
 ----
 
 \* MV CONSTANT declarations@modelParameterConstants
@@ -27,40 +27,45 @@ c1, c2
 ----
 
 \* MV CONSTANT definitions Datacenter
-const_157892260101450000 == 
+const_1578980297099283000 == 
 {d1, d2}
 ----
 
 \* MV CONSTANT definitions Partition
-const_157892260101451000 == 
+const_1578980297099284000 == 
 {p1, p2}
 ----
 
 \* MV CONSTANT definitions Key
-const_157892260101452000 == 
+const_1578980297099285000 == 
 {k1, k2}
 ----
 
 \* MV CONSTANT definitions Value
-const_157892260101453000 == 
-{v1, v2}
+const_1578980297099286000 == 
+{v1}
 ----
 
 \* MV CONSTANT definitions Client
-const_157892260101454000 == 
+const_1578980297099287000 == 
 {c1, c2}
 ----
 
 \* SYMMETRY definition
-symm_157892260101455000 == 
-Permutations(const_157892260101450000) \union Permutations(const_157892260101451000) \union Permutations(const_157892260101452000) \union Permutations(const_157892260101453000) \union Permutations(const_157892260101454000)
+symm_1578980297099288000 == 
+Permutations(const_1578980297099283000) \union Permutations(const_1578980297099284000) \union Permutations(const_1578980297099285000) \union Permutations(const_1578980297099287000)
 ----
 
-\* CONSTANT definitions @modelParameterConstants:2Sharding
-const_157892260101456000 == 
+\* CONSTANT definitions @modelParameterConstants:5ClientAttachment
+const_1578980297099289000 == 
+c1 :> d1 @@ c2 :> d2
+----
+
+\* CONSTANT definitions @modelParameterConstants:6KeySharding
+const_1578980297099290000 == 
 k1 :> p1 @@ k2 :> p2
 ----
 
 =============================================================================
 \* Modification History
-\* Created Mon Jan 13 21:36:41 CST 2020 by hengxin
+\* Created Tue Jan 14 13:38:17 CST 2020 by hengxin
