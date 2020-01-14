@@ -41,11 +41,11 @@ vars == <<cvc, clock, pvc, css, PMC, store, updates, msgs>>
 Clock == Nat
 VC == [Datacenter -> Clock]  \* vector clock with an entry per datacenter d \in Datacenter
 VCInit == [d \in Datacenter |-> 0]
-KVTuple == [key : Key, val : Value \cup {NotVal}, vc : VC]
+KVTuple == [key : Key, val : Value, vc : VC]
 
 Message ==
          [type : {"ReadRequest"}, key : Key, vc : VC, c : Client, p : Partition, d : Datacenter]
-    \cup [type : {"ReadReply"}, val : Value \cup {NotVal}, vc : VC, c : Client]
+    \cup [type : {"ReadReply"}, val : Value, vc : VC, c : Client]
     \cup [type : {"UpdateRequest"}, key : Key, val : Value, vc : VC, c : Client, p : Partition, d : Datacenter]
     \cup [type : {"UpdateReply"}, ts : Clock, c : Client, d : Datacenter]
 
@@ -89,7 +89,7 @@ Read(c, k) == \* c \in Client reads from k \in Key
 ReadReply(c) == \* c \in Client handles the reply to its read request
     /\ \E m \in msgs: 
         /\ m.type = "ReadReply" /\ m.c = c  \* such m is unique
-        /\ cvc' = [cvc EXCEPT ![c] = [d \in Datacenter |-> Max(m.vc[d], @[d])]]
+        /\ cvc' = [d \in Datacenter |-> Max(m.vc[d], cvc[d])]
         /\ msgs' = msgs \ {m}
     /\ UNCHANGED <<sVars>>
     

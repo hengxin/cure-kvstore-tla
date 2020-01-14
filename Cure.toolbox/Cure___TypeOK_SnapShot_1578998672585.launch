@@ -2,7 +2,7 @@
 <launchConfiguration type="org.lamport.tla.toolbox.tool.tlc.modelCheck">
     <stringAttribute key="TLCCmdLineParameters" value=""/>
     <intAttribute key="collectCoverage" value="1"/>
-    <stringAttribute key="configurationName" value="TypeOK_SnapShot_1578980077564"/>
+    <stringAttribute key="configurationName" value="TypeOK_SnapShot_1578998672585"/>
     <booleanAttribute key="deferLiveness" value="false"/>
     <intAttribute key="dfidDepth" value="100"/>
     <booleanAttribute key="dfidMode" value="false"/>
@@ -12,7 +12,7 @@
     <stringAttribute key="distributedTLC" value="off"/>
     <stringAttribute key="distributedTLCVMArgs" value=""/>
     <intAttribute key="fpBits" value="1"/>
-    <intAttribute key="fpIndex" value="4"/>
+    <intAttribute key="fpIndex" value="83"/>
     <booleanAttribute key="fpIndexRandom" value="true"/>
     <intAttribute key="maxHeapSize" value="80"/>
     <intAttribute key="maxSetSize" value="1000000"/>
@@ -21,15 +21,16 @@
     <stringAttribute key="modelBehaviorNext" value=""/>
     <stringAttribute key="modelBehaviorSpec" value="Spec"/>
     <intAttribute key="modelBehaviorSpecType" value="1"/>
-    <stringAttribute key="modelBehaviorVars" value="msgs, store, pvc, updates, PMC, css, cvc, clock"/>
+    <stringAttribute key="modelBehaviorVars" value="css, PMC, cvc, store, clock, updates, msgs, pvc"/>
     <stringAttribute key="modelComments" value="For TypeOK."/>
     <booleanAttribute key="modelCorrectnessCheckDeadlock" value="false"/>
     <listAttribute key="modelCorrectnessInvariants">
         <listEntry value="1TypeOK"/>
     </listAttribute>
     <listAttribute key="modelCorrectnessProperties"/>
-    <intAttribute key="modelEditorOpenTabs" value="4"/>
+    <intAttribute key="modelEditorOpenTabs" value="6"/>
     <stringAttribute key="modelExpressionEval" value=""/>
+    <stringAttribute key="modelParameterActionConstraint" value=""/>
     <listAttribute key="modelParameterConstants">
         <listEntry value="Datacenter;;{d1, d2};1;1"/>
         <listEntry value="Partition;;{p1, p2};1;1"/>
@@ -39,6 +40,12 @@
         <listEntry value="ClientAttachment;;c1 :&gt; d1 @@ c2 :&gt; d2;0;0"/>
         <listEntry value="KeySharding;;k1 :&gt; p1 @@ k2 :&gt; p2;0;0"/>
     </listAttribute>
+    <stringAttribute key="modelParameterContraint" value=""/>
+    <listAttribute key="modelParameterDefinitions">
+        <listEntry value="NotVal;;NotVal;1;0"/>
+    </listAttribute>
+    <stringAttribute key="modelParameterModelValues" value="{}"/>
+    <stringAttribute key="modelParameterNewDefinitions" value=""/>
     <intAttribute key="numberOfWorkers" value="9"/>
     <booleanAttribute key="recover" value="false"/>
     <stringAttribute key="result.mail.address" value=""/>

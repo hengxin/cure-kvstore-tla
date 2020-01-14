@@ -14,6 +14,8 @@ CONSTANTS
     KeySharding,      \* the mapping from Key to Partition
     ClientAttachment  \* the mapping from Client to Datacenter
     
+NotVal == CHOOSE v : v \notin Value    
+    
 ASSUME 
     /\ KeySharding \in [Key -> Partition]
     /\ ClientAttachment \in [Client -> Datacenter]
@@ -39,11 +41,11 @@ vars == <<cvc, clock, pvc, css, PMC, store, updates, msgs>>
 Clock == Nat
 VC == [Datacenter -> Clock]  \* vector clock with an entry per datacenter d \in Datacenter
 VCInit == [d \in Datacenter |-> 0]
-KVTuple == [key : Key, val : Value, vc : VC]
+KVTuple == [key : Key, val : Value \cup {NotVal}, vc : VC]
 
 Message ==
          [type : {"ReadRequest"}, key : Key, vc : VC, c : Client, p : Partition, d : Datacenter]
-    \cup [type : {"ReadReply"}, val : Value, vc : VC, c : Client]
+    \cup [type : {"ReadReply"}, val : Value \cup {NotVal}, vc : VC, c : Client]
     \cup [type : {"UpdateRequest"}, key : Key, val : Value, vc : VC, c : Client, p : Partition, d : Datacenter]
     \cup [type : {"UpdateReply"}, ts : Clock, c : Client, d : Datacenter]
 
@@ -63,13 +65,15 @@ Init ==
     /\ pvc = [p \in Partition |-> [d \in Datacenter |-> VCInit]]
     /\ css = [p \in Partition |-> [d \in Datacenter |-> VCInit]]
     /\ PMC = [p \in Partition |-> [d \in Datacenter |-> [q \in Partition |-> VCInit]]]
-    /\ store = [p \in Partition |-> [d \in Datacenter |-> {}]]
+    /\ store = [p \in Partition |-> [d \in Datacenter |-> 
+                    [key : {k \in Key : KeySharding[k] = p}, val : {NotVal}, vc : {VCInit}]]]
     /\ updates = [p \in Partition |-> [d \in Datacenter |-> <<>>]]
     /\ msgs = {}
 --------------------------------------------------------------------------
 Max(a, b) == IF a < b THEN b ELSE a
 
 Send(m) == msgs' = msgs \cup {m}
+SendAndDelete(sm, dm) == msgs' = (msgs \cup {sm}) \ {dm}
 
 Ready2Issue(c) == \A m \in msgs: 
     m.type \in {"ReadRequest", "ReadReply", "UpdateRequest", "UpdateReply"} => m.c # c 
@@ -85,8 +89,9 @@ Read(c, k) == \* c \in Client reads from k \in Key
 ReadReply(c) == \* c \in Client handles the reply to its read request
     /\ \E m \in msgs: 
         /\ m.type = "ReadReply" /\ m.c = c  \* such m is unique
-        /\ cvc' = [d \in Datacenter |-> Max(m.vc[d], cvc[d])]
-    /\ UNCHANGED <<sVars, mVars>>
+        /\ cvc' = [cvc EXCEPT ![c] = [d \in Datacenter |-> Max(m.vc[d], @[d])]]
+        /\ msgs' = msgs \ {m}
+    /\ UNCHANGED <<sVars>>
     
 Update(c, k, v) == \* c \in Client updates k \in Key with v \in Value
     /\ Ready2Issue(c)
@@ -98,11 +103,25 @@ UpdateReply(c) == \* c \in Client handles the reply to its update request
     /\ \E m \in msgs:
         /\ m.type = "UpdateReply" /\ m.c = c \* such m is unique
         /\ cvc' = [cvc EXCEPT ![c][m.d] = m.ts]
-    /\ UNCHANGED <<sVars, mVars>>
+        /\ msgs' = msgs \ {m}
+    /\ UNCHANGED <<sVars>>
 --------------------------------------------------------------------------
 (* Server operations at partition p \in Partition in datacenter d \in Datacenter. *)
 
-UpdateRequest(p, d) ==
+ReadRequest(p, d) == \* handle a "ReadRequest"
+    /\ \E m \in msgs:
+        /\ m.type = "ReadRequest" /\ m.p = p /\ m.d = d  \* such m may be not unique
+        /\ css' = [css EXCEPT ![p][d] = 
+            [dc \in Datacenter |-> IF dc = d THEN @[dc] ELSE Max(m.vc[dc], @[dc])]]
+        /\ LET kvs == {kv \in store[p][d]: 
+                        /\ kv.key = m.key 
+                        /\ \A dc \in Datacenter \ {d}: kv.vc[dc] <= css'[p][d][dc]}
+               lkv == CHOOSE kv \in kvs:  \* choose the latest one (Existence? Uniqueness?)
+                        \A akv \in kvs, dc \in Datacenter: akv.vc[dc] <= kv.vc[dc]
+           IN SendAndDelete([type |-> "ReadReply", val |-> lkv.val, vc |-> lkv.vc, c |-> m.c], m)
+    /\ UNCHANGED <<cVars, clock, pvc, PMC, store, updates>>
+
+UpdateRequest(p, d) == \* handle a "UpdateRequest"
     /\ \E m \in msgs:
         /\ m.type = "UpdateRequest" /\ m.p = p /\ m.d = d  \* such m may be not unique
         /\ m.vc[d] <= clock[p][d]  \* waiting condition
@@ -113,14 +132,14 @@ UpdateRequest(p, d) ==
                        vc |-> [m.vc EXCEPT ![d] = clock[p][d]]]
            IN /\ store' = [store EXCEPT ![p][d] = @ \cup {kv}] 
               /\ updates' = [updates EXCEPT ![p][d] = @ \o <<kv>>]
-              /\ Send([type |-> "UpdateReply", ts |-> clock[p][d], c |-> m.c, d |-> d])
+              /\ SendAndDelete([type |-> "UpdateReply", ts |-> clock[p][d], c |-> m.c, d |-> d], m)
     /\ UNCHANGED <<cVars, clock, PMC>>
 --------------------------------------------------------------------------
 Next == 
     \/ \E c \in Client, k \in Key: Read(c, k)
     \/ \E c \in Client, k \in Key, v \in Value: Update(c, k, v)
     \/ \E c \in Client: ReadReply(c) \/ UpdateReply(c)
-    \/ \E p \in Partition, d \in Datacenter: UpdateRequest(p, d)
+    \/ \E p \in Partition, d \in Datacenter: ReadRequest(p, d) \/ UpdateRequest(p, d)
 
 Spec == Init /\ [][Next]_vars
 --------------------------------------------------------------------------

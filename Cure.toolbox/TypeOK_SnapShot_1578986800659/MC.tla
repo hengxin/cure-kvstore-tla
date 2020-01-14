@@ -27,45 +27,45 @@ c1, c2
 ----
 
 \* MV CONSTANT definitions Datacenter
-const_1578987021328358000 == 
+const_1578986793635348000 == 
 {d1, d2}
 ----
 
 \* MV CONSTANT definitions Partition
-const_1578987021328359000 == 
+const_1578986793635349000 == 
 {p1, p2}
 ----
 
 \* MV CONSTANT definitions Key
-const_1578987021328360000 == 
+const_1578986793635350000 == 
 {k1, k2}
 ----
 
 \* MV CONSTANT definitions Value
-const_1578987021328361000 == 
+const_1578986793635351000 == 
 {v1}
 ----
 
 \* MV CONSTANT definitions Client
-const_1578987021328362000 == 
+const_1578986793635352000 == 
 {c1, c2}
 ----
 
 \* SYMMETRY definition
-symm_1578987021328363000 == 
-Permutations(const_1578987021328358000) \union Permutations(const_1578987021328359000) \union Permutations(const_1578987021328360000) \union Permutations(const_1578987021328362000)
+symm_1578986793635353000 == 
+Permutations(const_1578986793635348000) \union Permutations(const_1578986793635349000) \union Permutations(const_1578986793635350000) \union Permutations(const_1578986793635352000)
 ----
 
 \* CONSTANT definitions @modelParameterConstants:5ClientAttachment
-const_1578987021328364000 == 
+const_1578986793635354000 == 
 c1 :> d1 @@ c2 :> d2
 ----
 
 \* CONSTANT definitions @modelParameterConstants:6KeySharding
-const_1578987021328365000 == 
+const_1578986793635355000 == 
 k1 :> p1 @@ k2 :> p2
 ----
 
 =============================================================================
 \* Modification History
-\* Created Tue Jan 14 15:30:21 CST 2020 by hengxin
+\* Created Tue Jan 14 15:26:33 CST 2020 by hengxin
