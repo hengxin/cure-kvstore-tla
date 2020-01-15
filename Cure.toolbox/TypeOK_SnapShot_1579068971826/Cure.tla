@@ -30,13 +30,15 @@ VARIABLES
     PMC,     \* PMC[p][d]: matrix clock
     store,   \* store[p][d]: the kv store
     updates, \* updates[p][d]: the buffer of updates
+(* Clock management *)
+    tick, \* tick[p][d]: toggle on clock ticks
 (* Client-server communication *)
     msgs  \* the set of messages in transit
 
 cVars == <<cvc>>
-sVars == <<clock, pvc, css, PMC, store, updates>>
+sVars == <<clock, pvc, css, PMC, store, updates, tick>>
 mVars == <<msgs>>
-vars == <<cvc, clock, pvc, css, PMC, store, updates, msgs>>
+vars == <<cvc, clock, pvc, css, PMC, store, updates, tick, msgs>>
 --------------------------------------------------------------------------
 Clock == Nat
 VC == [Datacenter -> Clock]  \* vector clock with an entry per datacenter d \in Datacenter
@@ -48,6 +50,9 @@ Message ==
     \cup [type : {"ReadReply"}, val : Value \cup {NotVal}, vc : VC, c : Client]
     \cup [type : {"UpdateRequest"}, key : Key, val : Value, vc : VC, c : Client, p : Partition, d : Datacenter]
     \cup [type : {"UpdateReply"}, ts : Clock, c : Client, d : Datacenter]
+    \* d \in Datacenter: the source datacenter; dd \in Datacenter: the destination datacenter
+    \cup [type : {"Replicate"}, d : Datacenter, kvs : Seq(KVTuple), p : Partition, dd : Datacenter]
+    \cup [type : {"Heartbeat"}, d : Datacenter, ts : Clock, p : Partition, dd : Datacenter]
 
 TypeOK == 
     /\ cvc \in [Client -> VC]
@@ -57,6 +62,7 @@ TypeOK ==
     /\ PMC \in [Partition -> [Datacenter -> [Partition -> VC]]]
     /\ store \in [Partition -> [Datacenter -> SUBSET KVTuple]]
     /\ updates \in [Partition -> [Datacenter -> Seq(KVTuple)]]
+    /\ tick \in [Partition -> [Datacenter -> BOOLEAN]]
     /\ msgs \subseteq Message
 --------------------------------------------------------------------------
 Init ==
@@ -68,11 +74,15 @@ Init ==
     /\ store = [p \in Partition |-> [d \in Datacenter |-> 
                     [key : {k \in Key : KeySharding[k] = p}, val : {NotVal}, vc : {VCInit}]]]
     /\ updates = [p \in Partition |-> [d \in Datacenter |-> <<>>]]
+    /\ tick = [p \in Partition |-> [d \in Datacenter |-> FALSE]]
     /\ msgs = {}
 --------------------------------------------------------------------------
 Max(a, b) == IF a < b THEN b ELSE a
+Range(f) == {f[x]: x \in DOMAIN f}
+Last(seq) == seq[Len(seq)]
 
 Send(m) == msgs' = msgs \cup {m}
+SendSet(ms) == msgs' = msgs \cup ms
 SendAndDelete(sm, dm) == msgs' = (msgs \cup {sm}) \ {dm}
 
 Ready2Issue(c) == \A m \in msgs: 
@@ -119,13 +129,13 @@ ReadRequest(p, d) == \* handle a "ReadRequest"
                lkv == CHOOSE kv \in kvs:  \* choose the latest one (Existence? Uniqueness?)
                         \A akv \in kvs, dc \in Datacenter: akv.vc[dc] <= kv.vc[dc]
            IN SendAndDelete([type |-> "ReadReply", val |-> lkv.val, vc |-> lkv.vc, c |-> m.c], m)
-    /\ UNCHANGED <<cVars, clock, pvc, PMC, store, updates>>
+    /\ UNCHANGED <<cVars, clock, pvc, PMC, store, updates, tick>>
 
 UpdateRequest(p, d) == \* handle a "UpdateRequest"
     /\ \E m \in msgs:
         /\ m.type = "UpdateRequest" /\ m.p = p /\ m.d = d  \* such m may be not unique
-        /\ m.vc[d] <= clock[p][d]  \* waiting condition
-        /\ pvc' = [pvc EXCEPT ![p][d][d] = clock[p][d]]
+        /\ m.vc[d] < clock[p][d]  \* waiting condition; ("<=" strengthed to "<")
+        \* /\ pvc' = [pvc EXCEPT ![p][d][d] = clock[p][d]]
         /\ css' = [css EXCEPT ![p][d] = 
             [dc \in Datacenter |-> IF dc = d THEN @[dc] ELSE Max(m.vc[dc], @[dc])]]
         /\ LET kv == [key |-> m.key, val |-> m.val, 
@@ -133,13 +143,52 @@ UpdateRequest(p, d) == \* handle a "UpdateRequest"
            IN /\ store' = [store EXCEPT ![p][d] = @ \cup {kv}] 
               /\ updates' = [updates EXCEPT ![p][d] = @ \o <<kv>>]
               /\ SendAndDelete([type |-> "UpdateReply", ts |-> clock[p][d], c |-> m.c, d |-> d], m)
-    /\ UNCHANGED <<cVars, clock, PMC>>
+    /\ UNCHANGED <<cVars, clock, pvc, PMC, tick>>
+    
+PropagateUpdates(p, d) == \* propagate buffered updates to other datacenters
+    /\ IF updates[p][d] # <<>>
+       THEN /\ SendSet([type : {"Replicate"}, d : {d}, kvs : {updates[p][d]}, p : {p}, dd : Datacenter \ {d}])
+            /\ updates' = [updates EXCEPT ![p][d] = <<>>]
+            /\ UNCHANGED <<tick>>
+       ELSE /\ tick[p][d]
+            /\ SendSet([type : {"Heartbeat"}, d : {d}, ts : {pvc[p][d][d]}, p : {p}, dd : Datacenter \ {d}])
+            /\ tick' = [tick EXCEPT ![p][d] = FALSE]
+            /\ UNCHANGED <<updates>>
+    /\ UNCHANGED <<cVars, cvc, clock, pvc, css, PMC, store>>
+
+Replicate(p, d) == \* handle a "Replicate"
+    /\ \E m \in msgs:
+        /\ m.type = "Replicate" /\ m.p = p /\ m.dd = d
+        /\ store' = [store EXCEPT ![p][d] = @ \cup Range(m.kvs)]
+        /\ pvc' = [pvc EXCEPT ![p][d] = Last(m.kvs).vc[m.d]]
+        /\ msgs' = msgs \ {m}
+    /\ UNCHANGED <<cVars, cvc, clock, css, PMC, updates, tick>>
+    
+Heartbeat(p, d) == \* handle a "Heartbeat"    
+    /\ \E m \in msgs:
+        /\ m.type = "Heartbeat" /\ m.p = p /\ m.dd = d
+        /\ pvc' = [pvc EXCEPT ![p][d][m.d] = m.ts]
+        /\ msgs' = msgs \ {m}
+    /\ UNCHANGED <<cVars, cvc, clock, css, PMC, store, updates, tick>>        
+--------------------------------------------------------------------------
+(* Clock management at partition p \in Partition in datacenter d \in Datacenter *)
+Tick(p, d) == \* clock[p][d] ticks
+    /\ clock' = [clock EXCEPT ![p][d] = @ + 1]  \* TODO: using JavaTime?
+    /\ pvc' = [pvc EXCEPT ![p][d][d] = clock'[p][d]]
+    /\ tick' = [tick EXCEPT ![p][d] = TRUE]
+    /\ UNCHANGED <<cVars, mVars, cvc, css, PMC, store, updates>>
 --------------------------------------------------------------------------
 Next == 
     \/ \E c \in Client, k \in Key: Read(c, k)
     \/ \E c \in Client, k \in Key, v \in Value: Update(c, k, v)
     \/ \E c \in Client: ReadReply(c) \/ UpdateReply(c)
-    \/ \E p \in Partition, d \in Datacenter: ReadRequest(p, d) \/ UpdateRequest(p, d)
+    \/ \E p \in Partition, d \in Datacenter: 
+        \/ ReadRequest(p, d) 
+        \/ UpdateRequest(p, d)
+        \/ PropagateUpdates(p, d)
+        \/ Replicate(p, d)
+        \/ Heartbeat(p, d)
+        \/ Tick(p, d)
 
 Spec == Init /\ [][Next]_vars
 --------------------------------------------------------------------------

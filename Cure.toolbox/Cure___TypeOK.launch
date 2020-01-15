@@ -3,7 +3,7 @@
     <stringAttribute key="TLCCmdLineParameters" value=""/>
     <intAttribute key="collectCoverage" value="1"/>
     <stringAttribute key="configurationName" value="TypeOK"/>
-    <booleanAttribute key="deferLiveness" value="false"/>
+    <booleanAttribute key="deferLiveness" value="true"/>
     <intAttribute key="dfidDepth" value="100"/>
     <booleanAttribute key="dfidMode" value="false"/>
     <intAttribute key="distributedFPSetCount" value="0"/>
@@ -12,7 +12,7 @@
     <stringAttribute key="distributedTLC" value="off"/>
     <stringAttribute key="distributedTLCVMArgs" value=""/>
     <intAttribute key="fpBits" value="1"/>
-    <intAttribute key="fpIndex" value="83"/>
+    <intAttribute key="fpIndex" value="0"/>
     <booleanAttribute key="fpIndexRandom" value="true"/>
     <intAttribute key="maxHeapSize" value="80"/>
     <intAttribute key="maxSetSize" value="1000000"/>
@@ -21,7 +21,7 @@
     <stringAttribute key="modelBehaviorNext" value=""/>
     <stringAttribute key="modelBehaviorSpec" value="Spec"/>
     <intAttribute key="modelBehaviorSpecType" value="1"/>
-    <stringAttribute key="modelBehaviorVars" value="css, PMC, cvc, store, clock, updates, msgs, pvc"/>
+    <stringAttribute key="modelBehaviorVars" value="css, cvc, store, clock, updates, msgs, tick, pvc"/>
     <stringAttribute key="modelComments" value="For TypeOK."/>
     <booleanAttribute key="modelCorrectnessCheckDeadlock" value="false"/>
     <listAttribute key="modelCorrectnessInvariants">
