@@ -27,15 +27,42 @@ TLA+ Spec for the Cure Key-Value Store
 
 ## Progress
 ### 2020-01-15
-- Message
+- [x] Message
   - +`REPLICATE`
   - +`HEARTBEAT`
-- Clock
+- [x] Clock
   - Tick as a separate action
     - `Clock[p][d]`
     - `pvc[p][d]`
   - Change `<=` in the waiting condition of `UPDATE_REQUEST` to `<`?
   - `tick` for `Heartbeat`
-- CSS
+- [x] Computing CSS
 ### 2020-01-16
-### 2020-01-17
+- [x] email
+  - [x] "latest version"
+  - [x] FIFO channel for propagating updates
+  - [x] `UpdateCSS`: `css[m][d][d]` not necessary?
+### 2020-01-21
+- [x] FIFO channel for propagating updates and heartbeats
+  - `incoming[p][d]`
+    - one incoming channel for each partition (NOW)
+    - `d \in Datacenter` incoming channels for each partition
+- [x] `UpdateCSS`: 
+  - [x] Also computing `css[m][d][d]`, for simplicity 
+- [x] `i # d` in Line 3 and Line 8
+  - [x] Delete such conditions, for simplicity
+### 2020-01-23
+- [x] Fixing one (`pvc`) `'` problem
+- [x] Fixing `pvc` updating error
+
+## TODO
+- Version without Heartbeat
+  - Check liveness
+- Replacing `updates` with `fifo`
+- Properties
+  - Safety
+    - `TypeOK`
+    - `cvc[c]` non-decreasing 
+    - `css[p][d]` non-decreasing
+    - CM
+  - Liveness

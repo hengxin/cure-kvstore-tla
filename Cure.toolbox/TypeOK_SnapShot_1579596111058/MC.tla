@@ -18,7 +18,7 @@ k1, k2
 
 \* MV CONSTANT declarations@modelParameterConstants
 CONSTANTS
-v1
+v
 ----
 
 \* MV CONSTANT declarations@modelParameterConstants
@@ -27,45 +27,55 @@ c1, c2
 ----
 
 \* MV CONSTANT definitions Datacenter
-const_1579069142915418000 == 
+const_157959575837697000 == 
 {d1, d2}
 ----
 
 \* MV CONSTANT definitions Partition
-const_1579069142915419000 == 
+const_157959575837698000 == 
 {p1, p2}
 ----
 
 \* MV CONSTANT definitions Key
-const_1579069142915420000 == 
+const_157959575837699000 == 
 {k1, k2}
 ----
 
 \* MV CONSTANT definitions Value
-const_1579069142915421000 == 
-{v1}
+const_1579595758376100000 == 
+{v}
 ----
 
 \* MV CONSTANT definitions Client
-const_1579069142915422000 == 
+const_1579595758376101000 == 
 {c1, c2}
 ----
 
 \* SYMMETRY definition
-symm_1579069142915423000 == 
-Permutations(const_1579069142915418000) \union Permutations(const_1579069142915419000) \union Permutations(const_1579069142915420000) \union Permutations(const_1579069142915422000)
+symm_1579595758376102000 == 
+Permutations(const_157959575837697000) \union Permutations(const_157959575837698000) \union Permutations(const_157959575837699000) \union Permutations(const_1579595758376101000)
 ----
 
 \* CONSTANT definitions @modelParameterConstants:5ClientAttachment
-const_1579069142915424000 == 
+const_1579595758376103000 == 
 c1 :> d1 @@ c2 :> d2
 ----
 
 \* CONSTANT definitions @modelParameterConstants:6KeySharding
-const_1579069142915425000 == 
+const_1579595758376104000 == 
 k1 :> p1 @@ k2 :> p2
+----
+
+\* Constant expression definition @modelExpressionEval
+const_expr_1579595758376106000 == 
+( p1 :> (d1 :> (d1 :> 1 @@ d2 :> 1) @@ d2 :> (d1 :> 0 @@ d2 :> 1)) @@
+  p2 :> (d1 :> (d1 :> 0 @@ d2 :> 1) @@ d2 :> (d1 :> 0 @@ d2 :> 1)) )
+----
+
+\* Constant expression ASSUME statement @modelExpressionEval
+ASSUME PrintT(<<"$!@$!@$!@$!@$!",const_expr_1579595758376106000>>)
 ----
 
 =============================================================================
 \* Modification History
-\* Created Wed Jan 15 14:19:02 CST 2020 by hengxin
+\* Created Tue Jan 21 16:35:58 CST 2020 by hengxin

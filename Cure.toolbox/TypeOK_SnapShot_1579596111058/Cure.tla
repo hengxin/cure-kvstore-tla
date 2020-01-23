@@ -30,7 +30,7 @@ VARIABLES
     pvc,     \* pvc[p][d]: the vector clock
     css,     \* css[p][d]: the stable snapshot
     store,   \* store[p][d]: the kv store
-(* communication: *)
+(* communication *)
     msgs, \* the set of messages in transit
     incoming \* fifo[p][d]: incomming FIFO channel; for propagating updates and heartbeats
 
@@ -88,7 +88,7 @@ Read(c, k) == \* c \in Client reads from k \in Key
 
 ReadReply(c) == \* c \in Client handles the reply to its read request
     /\ \E m \in msgs: 
-        /\ m.type = "ReadReply" /\ m.c = c  \* such m is unique due to well-formedness
+        /\ m.type = "ReadReply" /\ m.c = c  \* such m is unique
         /\ cvc' = [cvc EXCEPT ![c] = Merge(m.vc, @)]
         /\ msgs' = msgs \ {m}
     /\ UNCHANGED <<sVars, incoming>>
@@ -101,7 +101,7 @@ Update(c, k, v) == \* c \in Client updates k \in Key with v \in Value
     
 UpdateReply(c) == \* c \in Client handles the reply to its update request
     /\ \E m \in msgs:
-        /\ m.type = "UpdateReply" /\ m.c = c \* such m is unique due to well-formedness
+        /\ m.type = "UpdateReply" /\ m.c = c \* such m is unique
         /\ cvc' = [cvc EXCEPT ![c][m.d] = m.ts]
         /\ msgs' = msgs \ {m}
     /\ UNCHANGED <<sVars, incoming>>
@@ -110,7 +110,7 @@ UpdateReply(c) == \* c \in Client handles the reply to its update request
 
 ReadRequest(p, d) == \* handle a "ReadRequest"
     /\ \E m \in msgs:
-        /\ m.type = "ReadRequest" /\ m.p = p /\ m.d = d
+        /\ m.type = "ReadRequest" /\ m.p = p /\ m.d = d  \* such m may be not unique
         /\ css' = [css EXCEPT ![p][d] = Merge(m.vc, @)]
         /\ LET kvs == {kv \in store[p][d]: 
                         /\ kv.key = m.key 
@@ -122,23 +122,22 @@ ReadRequest(p, d) == \* handle a "ReadRequest"
 
 UpdateRequest(p, d) == \* handle a "UpdateRequest"
     /\ \E m \in msgs:
-        /\ m.type = "UpdateRequest" /\ m.p = p /\ m.d = d
+        /\ m.type = "UpdateRequest" /\ m.p = p /\ m.d = d  \* such m may be not unique
         /\ m.vc[d] < clock[p][d]  \* waiting condition; ("<=" strengthed to "<")
         /\ css' = [css EXCEPT ![p][d] = Merge(m.vc, @)]
         /\ LET kv == [key |-> m.key, val |-> m.val, 
                        vc |-> [m.vc EXCEPT ![d] = clock[p][d]]]
            IN /\ store' = [store EXCEPT ![p][d] = @ \cup {kv}] 
-              /\ SendAndDelete([type |-> "UpdateReply", ts |-> clock[p][d], c |-> m.c, d |-> d], m)
-              /\ incoming' = [incoming EXCEPT ![p] = [dc \in Datacenter |-> 
-                   IF dc = d THEN @[dc] ELSE Append(@[dc], [type |-> "Replicate", d |-> d, kv |-> kv])]]
-    /\ UNCHANGED <<cVars, clock, pvc>>
+              /\ incoming' = [incoming EXCEPT ![p] = \* replicating updates
+                    [dc \in Datacenter |-> Append(@[dc], [type |-> "Replicate", d |-> d, kv |-> kv])]]
+    /\ UNCHANGED <<cVars, clock, pvc, msgs>>
     
 Replicate(p, d) == \* handle a "Replicate"
     /\ incoming[p][d] # <<>>
     /\ LET m == Head(incoming[p][d])
-       IN /\ m.type = "Replicate"
+       IN /\ m.type = "Replicate" 
           /\ store' = [store EXCEPT ![p][d] = @ \cup {m.kv}]
-          /\ pvc' = [pvc EXCEPT ![p][d][m.d] = m.kv.vc[m.d]]
+          /\ pvc' = [pvc EXCEPT ![p][d][d] = m.kv.vc[m.d]]
           /\ incoming' = [incoming EXCEPT ![p][d] = Tail(@)]
     /\ UNCHANGED <<cVars, cvc, clock, css, msgs>>
     
@@ -154,8 +153,8 @@ Heartbeat(p, d) == \* handle a "Heartbeat"
 Tick(p, d) == \* clock[p][d] ticks
     /\ clock' = [clock EXCEPT ![p][d] = @ + 1]
     /\ pvc' = [pvc EXCEPT ![p][d][d] = clock'[p][d]]
-    /\ incoming' = [incoming EXCEPT ![p] = [dc \in Datacenter |-> 
-         IF dc = d THEN @[dc] ELSE Append(@[dc], [type |-> "Heartbeat", d |-> d, ts |-> pvc'[p][d][d]])]]
+    /\ incoming' = [incoming EXCEPT ![p] = 
+        [dc \in Datacenter |-> Append(@[dc], [type |-> "Heartbeat", d |-> d, ts |-> pvc[p][d][d]])]]
     /\ UNCHANGED <<cVars, cvc, css, store, msgs>>
     
 UpdateCSS(p, d) == \* update css[p][d]

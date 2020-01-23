@@ -2,12 +2,10 @@
 (*
   See ICDCS2016: "Cure: Strong Semantics Meets High Availability and Low Latency".
 *)
-EXTENDS Naturals, Sequences, TLC
+EXTENDS Naturals, Sequences
 --------------------------------------------------------------------------
 Max(a, b) == IF a < b THEN b ELSE a
 Min(S) == CHOOSE a \in S: \A b \in S: a <= b 
-Range(f) == {f[x]: x \in DOMAIN f}
-Last(seq) == seq[Len(seq)]
 --------------------------------------------------------------------------
 CONSTANTS 
     Key,         \* the set of keys, ranged over by k \in Key
@@ -32,20 +30,19 @@ VARIABLES
     pvc,     \* pvc[p][d]: the vector clock
     css,     \* css[p][d]: the stable snapshot
     store,   \* store[p][d]: the kv store
-    updates, \* updates[p][d]: the buffer of updates
-(* Clock management *)
-    tick, \* tick[p][d]: toggle on clock ticks
-(* Client-server communication *)
-    msgs  \* the set of messages in transit
+(* communication: *)
+    msgs, \* the set of messages in transit
+    incoming \* fifo[p][d]: incomming FIFO channel; for propagating updates and heartbeats
 
 cVars == <<cvc>>
-sVars == <<clock, pvc, css, store, updates, tick>>
-mVars == <<msgs>>
-vars == <<cvc, clock, pvc, css, store, updates, tick, msgs>>
+sVars == <<clock, pvc, css, store>>
+mVars == <<msgs, incoming>>
+vars == <<cvc, clock, pvc, css, store, msgs, incoming>>
 --------------------------------------------------------------------------
 Clock == Nat
 VC == [Datacenter -> Clock]  \* vector clock with an entry per datacenter d \in Datacenter
 VCInit == [d \in Datacenter |-> 0]
+Merge(vc1, vc2) == [d \in Datacenter |-> Max(vc1[d], vc2[d])]
 KVTuple == [key : Key, val : Value \cup {NotVal}, vc : VC]
 
 Message ==
@@ -53,9 +50,8 @@ Message ==
     \cup [type : {"ReadReply"}, val : Value \cup {NotVal}, vc : VC, c : Client]
     \cup [type : {"UpdateRequest"}, key : Key, val : Value, vc : VC, c : Client, p : Partition, d : Datacenter]
     \cup [type : {"UpdateReply"}, ts : Clock, c : Client, d : Datacenter]
-    \* d \in Datacenter: the source datacenter; dd \in Datacenter: the destination datacenter
-    \cup [type : {"Replicate"}, d : Datacenter, kvs : Seq(KVTuple), p : Partition, dd : Datacenter]
-    \cup [type : {"Heartbeat"}, d : Datacenter, ts : Clock, p : Partition, dd : Datacenter]
+    \cup [type : {"Replicate"}, d : Datacenter, kv : KVTuple]
+    \cup [type : {"Heartbeat"}, d : Datacenter, ts : Clock]
 
 TypeOK == 
     /\ cvc \in [Client -> VC]
@@ -63,9 +59,8 @@ TypeOK ==
     /\ pvc \in [Partition -> [Datacenter -> VC]]
     /\ css \in [Partition -> [Datacenter -> VC]]
     /\ store \in [Partition -> [Datacenter -> SUBSET KVTuple]]
-    /\ updates \in [Partition -> [Datacenter -> Seq(KVTuple)]]
-    /\ tick \in [Partition -> [Datacenter -> BOOLEAN]]
     /\ msgs \subseteq Message
+    /\ incoming \in [Partition -> [Datacenter -> Seq(Message)]]
 --------------------------------------------------------------------------
 Init ==
     /\ cvc = [c \in Client |-> VCInit]   
@@ -74,12 +69,10 @@ Init ==
     /\ css = [p \in Partition |-> [d \in Datacenter |-> VCInit]]
     /\ store = [p \in Partition |-> [d \in Datacenter |-> 
                     [key : {k \in Key : KeySharding[k] = p}, val : {NotVal}, vc : {VCInit}]]]
-    /\ updates = [p \in Partition |-> [d \in Datacenter |-> <<>>]]
-    /\ tick = [p \in Partition |-> [d \in Datacenter |-> FALSE]]
     /\ msgs = {}
+    /\ incoming = [p \in Partition |-> [d \in Datacenter |-> <<>>]]
 --------------------------------------------------------------------------
 Send(m) == msgs' = msgs \cup {m}
-SendSet(ms) == msgs' = msgs \cup ms
 SendAndDelete(sm, dm) == msgs' = (msgs \cup {sm}) \ {dm}
 
 CanIssue(c) == \A m \in msgs: 
@@ -91,95 +84,84 @@ Read(c, k) == \* c \in Client reads from k \in Key
     /\ CanIssue(c)
     /\ Send([type |-> "ReadRequest", key |-> k, vc |-> cvc[c], 
              c |-> c, p |-> KeySharding[k], d |-> ClientAttachment[c]])
-    /\ UNCHANGED <<cVars, sVars>>
+    /\ UNCHANGED <<cVars, sVars, incoming>>
 
 ReadReply(c) == \* c \in Client handles the reply to its read request
     /\ \E m \in msgs: 
-        /\ m.type = "ReadReply" /\ m.c = c  \* such m is unique
-        /\ cvc' = [cvc EXCEPT ![c] = [d \in Datacenter |-> Max(m.vc[d], @[d])]]
+        /\ m.type = "ReadReply" /\ m.c = c  \* such m is unique due to well-formedness
+        /\ cvc' = [cvc EXCEPT ![c] = Merge(m.vc, @)]
         /\ msgs' = msgs \ {m}
-    /\ UNCHANGED <<sVars>>
+    /\ UNCHANGED <<sVars, incoming>>
     
 Update(c, k, v) == \* c \in Client updates k \in Key with v \in Value
     /\ CanIssue(c)
     /\ Send([type |-> "UpdateRequest", key |-> k, val |-> v,
              vc |-> cvc[c], c |-> c, p |-> KeySharding[k], d |-> ClientAttachment[c]])
-    /\ UNCHANGED <<cVars, sVars>>             
+    /\ UNCHANGED <<cVars, sVars, incoming>>             
     
 UpdateReply(c) == \* c \in Client handles the reply to its update request
     /\ \E m \in msgs:
-        /\ m.type = "UpdateReply" /\ m.c = c \* such m is unique
+        /\ m.type = "UpdateReply" /\ m.c = c \* such m is unique due to well-formedness
         /\ cvc' = [cvc EXCEPT ![c][m.d] = m.ts]
         /\ msgs' = msgs \ {m}
-    /\ UNCHANGED <<sVars>>
+    /\ UNCHANGED <<sVars, incoming>>
 --------------------------------------------------------------------------
 (* Server operations at partition p \in Partition in datacenter d \in Datacenter. *)
 
 ReadRequest(p, d) == \* handle a "ReadRequest"
     /\ \E m \in msgs:
-        /\ m.type = "ReadRequest" /\ m.p = p /\ m.d = d  \* such m may be not unique
-        /\ css' = [css EXCEPT ![p][d] = 
-            [dc \in Datacenter |-> IF dc = d THEN @[dc] ELSE Max(m.vc[dc], @[dc])]]
+        /\ m.type = "ReadRequest" /\ m.p = p /\ m.d = d
+        /\ css' = [css EXCEPT ![p][d] = Merge(m.vc, @)]
         /\ LET kvs == {kv \in store[p][d]: 
                         /\ kv.key = m.key 
                         /\ \A dc \in Datacenter \ {d}: kv.vc[dc] <= css'[p][d][dc]}
                lkv == CHOOSE kv \in kvs:  \* choose the latest one (Existence? Uniqueness?)
                         \A akv \in kvs, dc \in Datacenter: akv.vc[dc] <= kv.vc[dc]
            IN SendAndDelete([type |-> "ReadReply", val |-> lkv.val, vc |-> lkv.vc, c |-> m.c], m)
-    /\ UNCHANGED <<cVars, clock, pvc, store, updates, tick>>
+    /\ UNCHANGED <<cVars, clock, pvc, store, incoming>>
 
 UpdateRequest(p, d) == \* handle a "UpdateRequest"
     /\ \E m \in msgs:
-        /\ m.type = "UpdateRequest" /\ m.p = p /\ m.d = d  \* such m may be not unique
+        /\ m.type = "UpdateRequest" /\ m.p = p /\ m.d = d
         /\ m.vc[d] < clock[p][d]  \* waiting condition; ("<=" strengthed to "<")
-        \* /\ pvc' = [pvc EXCEPT ![p][d][d] = clock[p][d]]
-        /\ css' = [css EXCEPT ![p][d] = 
-            [dc \in Datacenter |-> IF dc = d THEN @[dc] ELSE Max(m.vc[dc], @[dc])]]
+        /\ css' = [css EXCEPT ![p][d] = Merge(m.vc, @)]
         /\ LET kv == [key |-> m.key, val |-> m.val, 
                        vc |-> [m.vc EXCEPT ![d] = clock[p][d]]]
            IN /\ store' = [store EXCEPT ![p][d] = @ \cup {kv}] 
-              /\ updates' = [updates EXCEPT ![p][d] = @ \o <<kv>>]
               /\ SendAndDelete([type |-> "UpdateReply", ts |-> clock[p][d], c |-> m.c, d |-> d], m)
-    /\ UNCHANGED <<cVars, clock, pvc, tick>>
+              /\ incoming' = [incoming EXCEPT ![p] = [dc \in Datacenter |-> 
+                   IF dc = d THEN @[dc] ELSE Append(@[dc], [type |-> "Replicate", d |-> d, kv |-> kv])]]
+    /\ UNCHANGED <<cVars, clock, pvc>>
     
-PropagateUpdates(p, d) == \* propagate buffered updates to other datacenters
-    /\ IF updates[p][d] # <<>>
-       THEN /\ SendSet([type : {"Replicate"}, d : {d}, kvs : {updates[p][d]}, p : {p}, dd : Datacenter \ {d}])
-            /\ updates' = [updates EXCEPT ![p][d] = <<>>]
-            /\ UNCHANGED <<tick>>
-       ELSE /\ tick[p][d]
-            /\ SendSet([type : {"Heartbeat"}, d : {d}, ts : {pvc[p][d][d]}, p : {p}, dd : Datacenter \ {d}])
-            /\ tick' = [tick EXCEPT ![p][d] = FALSE]
-            /\ UNCHANGED <<updates>>
-    /\ UNCHANGED <<cVars, cvc, clock, pvc, css, store>>
-
 Replicate(p, d) == \* handle a "Replicate"
-    /\ \E m \in msgs:
-        /\ m.type = "Replicate" /\ m.p = p /\ m.dd = d
-        /\ store' = [store EXCEPT ![p][d] = @ \cup Range(m.kvs)]
-        /\ pvc' = [pvc EXCEPT ![p][d][d] = Last(m.kvs).vc[m.d]]
-        /\ msgs' = msgs \ {m}
-    /\ UNCHANGED <<cVars, cvc, clock, css, updates, tick>>
+    /\ incoming[p][d] # <<>>
+    /\ LET m == Head(incoming[p][d])
+       IN /\ m.type = "Replicate"
+          /\ store' = [store EXCEPT ![p][d] = @ \cup {m.kv}]
+          /\ pvc' = [pvc EXCEPT ![p][d][m.d] = m.kv.vc[m.d]]
+          /\ incoming' = [incoming EXCEPT ![p][d] = Tail(@)]
+    /\ UNCHANGED <<cVars, cvc, clock, css, msgs>>
     
 Heartbeat(p, d) == \* handle a "Heartbeat"    
-    /\ \E m \in msgs:
-        /\ m.type = "Heartbeat" /\ m.p = p /\ m.dd = d
-        /\ pvc' = [pvc EXCEPT ![p][d][m.d] = m.ts]
-        /\ msgs' = msgs \ {m}
-    /\ UNCHANGED <<cVars, cvc, clock, css, store, updates, tick>>        
+    /\ incoming[p][d] # <<>>
+    /\ LET m == Head(incoming[p][d])
+       IN /\ m.type = "Heartbeat" 
+          /\ pvc' = [pvc EXCEPT ![p][d][m.d] = m.ts]
+          /\ incoming' = [incoming EXCEPT ![p][d] = Tail(@)]
+    /\ UNCHANGED <<cVars, cvc, clock, css, store, msgs>>        
 --------------------------------------------------------------------------
 (* Clock management at partition p \in Partition in datacenter d \in Datacenter *)
 Tick(p, d) == \* clock[p][d] ticks
     /\ clock' = [clock EXCEPT ![p][d] = @ + 1]
     /\ pvc' = [pvc EXCEPT ![p][d][d] = clock'[p][d]]
-    /\ tick' = [tick EXCEPT ![p][d] = TRUE]
-    /\ UNCHANGED <<cVars, mVars, cvc, css, store, updates>>
+    /\ incoming' = [incoming EXCEPT ![p] = [dc \in Datacenter |-> 
+         IF dc = d THEN @[dc] ELSE Append(@[dc], [type |-> "Heartbeat", d |-> d, ts |-> pvc'[p][d][d]])]]
+    /\ UNCHANGED <<cVars, cvc, css, store, msgs>>
     
 UpdateCSS(p, d) == \* update css[p][d]
     /\ css' = [css EXCEPT ![p][d] = 
-                [dc \in Datacenter |-> IF dc = d THEN @[dc] 
-                                       ELSE Min({pvc[pp][d][dc] : pp \in Partition})]]    
-    /\ UNCHANGED <<cVars, mVars, clock, pvc, store, updates, tick>>                                       
+                [dc \in Datacenter |-> Min({pvc[pp][d][dc] : pp \in Partition})]]    
+    /\ UNCHANGED <<cVars, mVars, clock, pvc, store>>                                       
 --------------------------------------------------------------------------
 Next == 
     \/ \E c \in Client, k \in Key: Read(c, k)
@@ -188,12 +170,10 @@ Next ==
     \/ \E p \in Partition, d \in Datacenter: 
         \/ ReadRequest(p, d) 
         \/ UpdateRequest(p, d)
-        \/ PropagateUpdates(p, d)
         \/ Replicate(p, d)
         \/ Heartbeat(p, d)
         \/ Tick(p, d)
         \/ UpdateCSS(p, d)
 
 Spec == Init /\ [][Next]_vars
---------------------------------------------------------------------------
 =============================================================================
