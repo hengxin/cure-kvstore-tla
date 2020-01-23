@@ -2,10 +2,11 @@
 (*
   See ICDCS2016: "Cure: Strong Semantics Meets High Availability and Low Latency".
 *)
-EXTENDS Naturals, Sequences
+EXTENDS Naturals, Sequences, FiniteSets
 --------------------------------------------------------------------------
 Max(a, b) == IF a < b THEN b ELSE a
-Min(S) == CHOOSE a \in S: \A b \in S: a <= b 
+Min(S) == CHOOSE a \in S: \A b \in S: a <= b
+Injective(f) == \A a, b \in DOMAIN f: (a # b) => (f[a] # f[b]) 
 --------------------------------------------------------------------------
 CONSTANTS 
     Key,         \* the set of keys, ranged over by k \in Key
@@ -45,6 +46,18 @@ VCInit == [d \in Datacenter |-> 0]
 Merge(vc1, vc2) == [d \in Datacenter |-> Max(vc1[d], vc2[d])]
 KVTuple == [key : Key, val : Value \cup {NotVal}, vc : VC]
 
+DC == Cardinality(Datacenter)
+DCIndex == CHOOSE f \in [1 .. DC -> Datacenter] : Injective(f)
+LTE(vc1, vc2) == \* less-than-or-equal-to comparator for vector clocks 
+    LET RECURSIVE LTEHelper(_, _, _) 
+        LTEHelper(vc1h, vc2h, index) == 
+            IF index > DC THEN TRUE \* EQ
+            ELSE LET d == DCIndex[index]
+                 IN  CASE vc1h[d] < vc2h[d] -> TRUE  \* LT
+                       [] vc1h[d] > vc2h[d] -> FALSE \* GT
+                       [] OTHER -> LTEHelper(vc1h, vc2h, index + 1)
+    IN  LTEHelper(vc1, vc2, 1)
+    
 Message ==
          [type : {"ReadRequest"}, key : Key, vc : VC, c : Client, p : Partition, d : Datacenter]
     \cup [type : {"ReadReply"}, val : Value \cup {NotVal}, vc : VC, c : Client]
@@ -115,8 +128,7 @@ ReadRequest(p, d) == \* handle a "ReadRequest"
         /\ LET kvs == {kv \in store[p][d]: 
                         /\ kv.key = m.key 
                         /\ \A dc \in Datacenter \ {d}: kv.vc[dc] <= css'[p][d][dc]}
-               lkv == CHOOSE kv \in kvs:  \* choose the latest one (Existence? Uniqueness?)
-                        \A akv \in kvs, dc \in Datacenter: akv.vc[dc] <= kv.vc[dc]
+               lkv == CHOOSE kv \in kvs: \A akv \in kvs: LTE(akv.vc, kv.vc)
            IN SendAndDelete([type |-> "ReadReply", val |-> lkv.val, vc |-> lkv.vc, c |-> m.c], m)
     /\ UNCHANGED <<cVars, clock, pvc, store, incoming>>
 
