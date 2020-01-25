@@ -40,7 +40,7 @@ VARIABLES
 cVars == <<cvc>>
 sVars == <<clock, pvc, css, store, L>>
 mVars == <<msgs, incoming>>
-vars == <<cvc, clock, pvc, css, store, L, msgs, incoming>>
+vars == <<cvc, clock, pvc, css, store, msgs, incoming>>
 --------------------------------------------------------------------------
 VC == [Datacenter -> Nat]  \* vector clock with an entry per datacenter d \in Datacenter
 VCInit == [d \in Datacenter |-> 0]

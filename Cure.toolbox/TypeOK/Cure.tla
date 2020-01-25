@@ -31,17 +31,18 @@ VARIABLES
     pvc,     \* pvc[p][d]: the vector clock
     css,     \* css[p][d]: the stable snapshot
     store,   \* store[p][d]: the kv store
+(* history: *)
+    L, \* L[c]: local history at client c \in Client
 (* communication: *)
     msgs, \* the set of messages in transit
-    incoming \* fifo[p][d]: incomming FIFO channel; for propagating updates and heartbeats
+    incoming \* incoming[p][d]: incoming FIFO channel for propagating updates and heartbeats
 
 cVars == <<cvc>>
-sVars == <<clock, pvc, css, store>>
+sVars == <<clock, pvc, css, store, L>>
 mVars == <<msgs, incoming>>
-vars == <<cvc, clock, pvc, css, store, msgs, incoming>>
+vars == <<cvc, clock, pvc, css, store, L, msgs, incoming>>
 --------------------------------------------------------------------------
-Clock == Nat
-VC == [Datacenter -> Clock]  \* vector clock with an entry per datacenter d \in Datacenter
+VC == [Datacenter -> Nat]  \* vector clock with an entry per datacenter d \in Datacenter
 VCInit == [d \in Datacenter |-> 0]
 Merge(vc1, vc2) == [d \in Datacenter |-> Max(vc1[d], vc2[d])]
 KVTuple == [key : Key, val : Value \cup {NotVal}, vc : VC]
@@ -62,18 +63,22 @@ Message ==
          [type : {"ReadRequest"}, key : Key, vc : VC, c : Client, p : Partition, d : Datacenter]
     \cup [type : {"ReadReply"}, val : Value \cup {NotVal}, vc : VC, c : Client]
     \cup [type : {"UpdateRequest"}, key : Key, val : Value, vc : VC, c : Client, p : Partition, d : Datacenter]
-    \cup [type : {"UpdateReply"}, ts : Clock, c : Client, d : Datacenter]
+    \cup [type : {"UpdateReply"}, ts : Nat, c : Client, d : Datacenter]
     \cup [type : {"Replicate"}, d : Datacenter, kv : KVTuple]
-    \cup [type : {"Heartbeat"}, d : Datacenter, ts : Clock]
+    \cup [type : {"Heartbeat"}, d : Datacenter, ts : Nat]
+
+Send(m) == msgs' = msgs \cup {m}
+SendAndDelete(sm, dm) == msgs' = (msgs \cup {sm}) \ {dm}
 
 TypeOK == 
     /\ cvc \in [Client -> VC]
-    /\ clock \in [Partition -> [Datacenter -> Clock]]
+    /\ clock \in [Partition -> [Datacenter -> Nat]]
     /\ pvc \in [Partition -> [Datacenter -> VC]]
     /\ css \in [Partition -> [Datacenter -> VC]]
     /\ store \in [Partition -> [Datacenter -> SUBSET KVTuple]]
     /\ msgs \subseteq Message
     /\ incoming \in [Partition -> [Datacenter -> Seq(Message)]]
+    /\ L \in [Client -> Seq(KVTuple)]
 --------------------------------------------------------------------------
 Init ==
     /\ cvc = [c \in Client |-> VCInit]   
@@ -84,14 +89,12 @@ Init ==
                     [key : {k \in Key : KeySharding[k] = p}, val : {NotVal}, vc : {VCInit}]]]
     /\ msgs = {}
     /\ incoming = [p \in Partition |-> [d \in Datacenter |-> <<>>]]
+    /\ L = [c \in Client |-> <<>>]
 --------------------------------------------------------------------------
-Send(m) == msgs' = msgs \cup {m}
-SendAndDelete(sm, dm) == msgs' = (msgs \cup {sm}) \ {dm}
+(* Client operations at client c \in Client. *)
 
 CanIssue(c) == \A m \in msgs: 
     m.type \in {"ReadRequest", "ReadReply", "UpdateRequest", "UpdateReply"} => m.c # c 
---------------------------------------------------------------------------
-(* Client operations at client c \in Client. *)
 
 Read(c, k) == \* c \in Client reads from k \in Key
     /\ CanIssue(c)
@@ -129,7 +132,8 @@ ReadRequest(p, d) == \* handle a "ReadRequest"
                         /\ kv.key = m.key 
                         /\ \A dc \in Datacenter \ {d}: kv.vc[dc] <= css'[p][d][dc]}
                lkv == CHOOSE kv \in kvs: \A akv \in kvs: LTE(akv.vc, kv.vc)
-           IN SendAndDelete([type |-> "ReadReply", val |-> lkv.val, vc |-> lkv.vc, c |-> m.c], m)
+           IN /\ SendAndDelete([type |-> "ReadReply", val |-> lkv.val, vc |-> lkv.vc, c |-> m.c], m)
+              /\ L' = [L EXCEPT ![m.c] = Append(@, lkv)]
     /\ UNCHANGED <<cVars, clock, pvc, store, incoming>>
 
 UpdateRequest(p, d) == \* handle a "UpdateRequest"
@@ -143,6 +147,7 @@ UpdateRequest(p, d) == \* handle a "UpdateRequest"
               /\ SendAndDelete([type |-> "UpdateReply", ts |-> clock[p][d], c |-> m.c, d |-> d], m)
               /\ incoming' = [incoming EXCEPT ![p] = [dc \in Datacenter |-> 
                    IF dc = d THEN @[dc] ELSE Append(@[dc], [type |-> "Replicate", d |-> d, kv |-> kv])]]
+              /\ L' = [L EXCEPT ![m.c] = Append(@, kv)]
     /\ UNCHANGED <<cVars, clock, pvc>>
     
 Replicate(p, d) == \* handle a "Replicate"
@@ -152,7 +157,7 @@ Replicate(p, d) == \* handle a "Replicate"
           /\ store' = [store EXCEPT ![p][d] = @ \cup {m.kv}]
           /\ pvc' = [pvc EXCEPT ![p][d][m.d] = m.kv.vc[m.d]]
           /\ incoming' = [incoming EXCEPT ![p][d] = Tail(@)]
-    /\ UNCHANGED <<cVars, cvc, clock, css, msgs>>
+    /\ UNCHANGED <<cVars, cvc, clock, css, L, msgs>>
     
 Heartbeat(p, d) == \* handle a "Heartbeat"    
     /\ incoming[p][d] # <<>>
@@ -160,7 +165,7 @@ Heartbeat(p, d) == \* handle a "Heartbeat"
        IN /\ m.type = "Heartbeat" 
           /\ pvc' = [pvc EXCEPT ![p][d][m.d] = m.ts]
           /\ incoming' = [incoming EXCEPT ![p][d] = Tail(@)]
-    /\ UNCHANGED <<cVars, cvc, clock, css, store, msgs>>        
+    /\ UNCHANGED <<cVars, cvc, clock, css, store, L, msgs>>        
 --------------------------------------------------------------------------
 (* Clock management at partition p \in Partition in datacenter d \in Datacenter *)
 Tick(p, d) == \* clock[p][d] ticks
@@ -168,12 +173,12 @@ Tick(p, d) == \* clock[p][d] ticks
     /\ pvc' = [pvc EXCEPT ![p][d][d] = clock'[p][d]]
     /\ incoming' = [incoming EXCEPT ![p] = [dc \in Datacenter |-> 
          IF dc = d THEN @[dc] ELSE Append(@[dc], [type |-> "Heartbeat", d |-> d, ts |-> pvc'[p][d][d]])]]
-    /\ UNCHANGED <<cVars, cvc, css, store, msgs>>
+    /\ UNCHANGED <<cVars, cvc, css, store, L, msgs>>
     
 UpdateCSS(p, d) == \* update css[p][d]
     /\ css' = [css EXCEPT ![p][d] = 
                 [dc \in Datacenter |-> Min({pvc[pp][d][dc] : pp \in Partition})]]    
-    /\ UNCHANGED <<cVars, mVars, clock, pvc, store>>                                       
+    /\ UNCHANGED <<cVars, mVars, clock, pvc, store, L>>                                       
 --------------------------------------------------------------------------
 Next == 
     \/ \E c \in Client, k \in Key: Read(c, k)

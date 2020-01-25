@@ -54,6 +54,15 @@ TLA+ Spec for the Cure Key-Value Store
 ### 2020-01-23
 - [x] Fixing one (`pvc`) `'` problem
 - [x] Fixing `pvc` updating error
+### 2020-01-25
+- [x] Delete `Clock == Nat`
+- [ ] Spec for CM: CausalMemory
+  - [x] +`L[c]` for history
+    - [x] Recording `L[c]` in `ReadRequest` & `UpdateRequest`
+  - [] causality order
+    - [] `so` order
+    - [] `write-into` order
+- [ ] Module `Relation`
 
 ## TODO
 - Version without Heartbeat
