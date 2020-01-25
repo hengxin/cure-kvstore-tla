@@ -31,21 +31,20 @@ VARIABLES
     pvc,     \* pvc[p][d]: the vector clock
     css,     \* css[p][d]: the stable snapshot
     store,   \* store[p][d]: the kv store
+(* history: *)
+    L, \* L[c]: local history at client c \in Client
 (* communication: *)
     msgs, \* the set of messages in transit
-    incoming, \* incoming[p][d]: incoming FIFO channel for propagating updates and heartbeats
-(* history: *)
-    L   \* L[c]: local history at client c \in Client
+    incoming \* incoming[p][d]: incoming FIFO channel for propagating updates and heartbeats
 
 cVars == <<cvc>>
-sVars == <<clock, pvc, css, store>>
+sVars == <<clock, pvc, css, store, L>>
 mVars == <<msgs, incoming>>
-vars == <<cvc, clock, pvc, css, store, msgs, incoming>>
+vars == <<cvc, clock, pvc, css, store, L, msgs, incoming>>
 --------------------------------------------------------------------------
 VC == [Datacenter -> Nat]  \* vector clock with an entry per datacenter d \in Datacenter
 VCInit == [d \in Datacenter |-> 0]
 Merge(vc1, vc2) == [d \in Datacenter |-> Max(vc1[d], vc2[d])]
-KVTuple == [key : Key, val : Value \cup {NotVal}, vc : VC]
 
 DC == Cardinality(Datacenter)
 DCIndex == CHOOSE f \in [1 .. DC -> Datacenter] : Injective(f)
@@ -58,6 +57,9 @@ LTE(vc1, vc2) == \* less-than-or-equal-to comparator for vector clocks
                        [] vc1h[d] > vc2h[d] -> FALSE \* GT
                        [] OTHER -> LTEHelper(vc1h, vc2h, index + 1)
     IN  LTEHelper(vc1, vc2, 1)
+
+KVTuple == [key : Key, val : Value \cup {NotVal}, vc : VC]
+OpTuple == [type : {"R", "W"}, kv : KVTuple]
     
 Message ==
          [type : {"ReadRequest"}, key : Key, vc : VC, c : Client, p : Partition, d : Datacenter]
@@ -78,7 +80,7 @@ TypeOK ==
     /\ store \in [Partition -> [Datacenter -> SUBSET KVTuple]]
     /\ msgs \subseteq Message
     /\ incoming \in [Partition -> [Datacenter -> Seq(Message)]]
-    /\ L \in [Client -> Seq(KVTuple)]
+    /\ L \in [Client -> Seq(OpTuple)]
 --------------------------------------------------------------------------
 Init ==
     /\ cvc = [c \in Client |-> VCInit]   
@@ -100,27 +102,27 @@ Read(c, k) == \* c \in Client reads from k \in Key
     /\ CanIssue(c)
     /\ Send([type |-> "ReadRequest", key |-> k, vc |-> cvc[c], 
              c |-> c, p |-> KeySharding[k], d |-> ClientAttachment[c]])
-    /\ UNCHANGED <<cVars, sVars, incoming, L>>
+    /\ UNCHANGED <<cVars, sVars, incoming>>
 
 ReadReply(c) == \* c \in Client handles the reply to its read request
     /\ \E m \in msgs: 
         /\ m.type = "ReadReply" /\ m.c = c  \* such m is unique due to well-formedness
         /\ cvc' = [cvc EXCEPT ![c] = Merge(m.vc, @)]
         /\ msgs' = msgs \ {m}
-    /\ UNCHANGED <<sVars, incoming, L>>
+    /\ UNCHANGED <<sVars, incoming>>
     
 Update(c, k, v) == \* c \in Client updates k \in Key with v \in Value
     /\ CanIssue(c)
     /\ Send([type |-> "UpdateRequest", key |-> k, val |-> v,
              vc |-> cvc[c], c |-> c, p |-> KeySharding[k], d |-> ClientAttachment[c]])
-    /\ UNCHANGED <<cVars, sVars, incoming, L>>             
+    /\ UNCHANGED <<cVars, sVars, incoming>>             
     
 UpdateReply(c) == \* c \in Client handles the reply to its update request
     /\ \E m \in msgs:
         /\ m.type = "UpdateReply" /\ m.c = c \* such m is unique due to well-formedness
         /\ cvc' = [cvc EXCEPT ![c][m.d] = m.ts]
         /\ msgs' = msgs \ {m}
-    /\ UNCHANGED <<sVars, incoming, L>>
+    /\ UNCHANGED <<sVars, incoming>>
 --------------------------------------------------------------------------
 (* Server operations at partition p \in Partition in datacenter d \in Datacenter. *)
 
@@ -133,7 +135,7 @@ ReadRequest(p, d) == \* handle a "ReadRequest"
                         /\ \A dc \in Datacenter \ {d}: kv.vc[dc] <= css'[p][d][dc]}
                lkv == CHOOSE kv \in kvs: \A akv \in kvs: LTE(akv.vc, kv.vc)
            IN /\ SendAndDelete([type |-> "ReadReply", val |-> lkv.val, vc |-> lkv.vc, c |-> m.c], m)
-              /\ L' = [L EXCEPT ![m.c] = Append(@, lkv)]
+              /\ L' = [L EXCEPT ![m.c] = Append(@, [type |-> "R", kv |-> lkv])]
     /\ UNCHANGED <<cVars, clock, pvc, store, incoming>>
 
 UpdateRequest(p, d) == \* handle a "UpdateRequest"
@@ -147,7 +149,7 @@ UpdateRequest(p, d) == \* handle a "UpdateRequest"
               /\ SendAndDelete([type |-> "UpdateReply", ts |-> clock[p][d], c |-> m.c, d |-> d], m)
               /\ incoming' = [incoming EXCEPT ![p] = [dc \in Datacenter |-> 
                    IF dc = d THEN @[dc] ELSE Append(@[dc], [type |-> "Replicate", d |-> d, kv |-> kv])]]
-              /\ L' = [L EXCEPT ![m.c] = Append(@, kv)]
+              /\ L' = [L EXCEPT ![m.c] = Append(@, [type |-> "R", kv |-> kv])]
     /\ UNCHANGED <<cVars, clock, pvc>>
     
 Replicate(p, d) == \* handle a "Replicate"
@@ -157,7 +159,7 @@ Replicate(p, d) == \* handle a "Replicate"
           /\ store' = [store EXCEPT ![p][d] = @ \cup {m.kv}]
           /\ pvc' = [pvc EXCEPT ![p][d][m.d] = m.kv.vc[m.d]]
           /\ incoming' = [incoming EXCEPT ![p][d] = Tail(@)]
-    /\ UNCHANGED <<cVars, cvc, clock, css, msgs>>
+    /\ UNCHANGED <<cVars, cvc, clock, css, L, msgs>>
     
 Heartbeat(p, d) == \* handle a "Heartbeat"    
     /\ incoming[p][d] # <<>>
@@ -165,7 +167,7 @@ Heartbeat(p, d) == \* handle a "Heartbeat"
        IN /\ m.type = "Heartbeat" 
           /\ pvc' = [pvc EXCEPT ![p][d][m.d] = m.ts]
           /\ incoming' = [incoming EXCEPT ![p][d] = Tail(@)]
-    /\ UNCHANGED <<cVars, cvc, clock, css, store, msgs>>        
+    /\ UNCHANGED <<cVars, cvc, clock, css, store, L, msgs>>        
 --------------------------------------------------------------------------
 (* Clock management at partition p \in Partition in datacenter d \in Datacenter *)
 Tick(p, d) == \* clock[p][d] ticks
@@ -173,12 +175,12 @@ Tick(p, d) == \* clock[p][d] ticks
     /\ pvc' = [pvc EXCEPT ![p][d][d] = clock'[p][d]]
     /\ incoming' = [incoming EXCEPT ![p] = [dc \in Datacenter |-> 
          IF dc = d THEN @[dc] ELSE Append(@[dc], [type |-> "Heartbeat", d |-> d, ts |-> pvc'[p][d][d]])]]
-    /\ UNCHANGED <<cVars, cvc, css, store, msgs>>
+    /\ UNCHANGED <<cVars, cvc, css, store, L, msgs>>
     
 UpdateCSS(p, d) == \* update css[p][d]
     /\ css' = [css EXCEPT ![p][d] = 
                 [dc \in Datacenter |-> Min({pvc[pp][d][dc] : pp \in Partition})]]    
-    /\ UNCHANGED <<cVars, mVars, clock, pvc, store>>                                       
+    /\ UNCHANGED <<cVars, mVars, clock, pvc, store, L>>                                       
 --------------------------------------------------------------------------
 Next == 
     \/ \E c \in Client, k \in Key: Read(c, k)

@@ -45,7 +45,6 @@ vars == <<cvc, clock, pvc, css, store, L, msgs, incoming>>
 VC == [Datacenter -> Nat]  \* vector clock with an entry per datacenter d \in Datacenter
 VCInit == [d \in Datacenter |-> 0]
 Merge(vc1, vc2) == [d \in Datacenter |-> Max(vc1[d], vc2[d])]
-KVTuple == [key : Key, val : Value \cup {NotVal}, vc : VC]
 
 DC == Cardinality(Datacenter)
 DCIndex == CHOOSE f \in [1 .. DC -> Datacenter] : Injective(f)
@@ -58,6 +57,9 @@ LTE(vc1, vc2) == \* less-than-or-equal-to comparator for vector clocks
                        [] vc1h[d] > vc2h[d] -> FALSE \* GT
                        [] OTHER -> LTEHelper(vc1h, vc2h, index + 1)
     IN  LTEHelper(vc1, vc2, 1)
+
+KVTuple == [key : Key, val : Value \cup {NotVal}, vc : VC]
+OpTuple == [type : {"R", "W"}, kv : KVTuple]
     
 Message ==
          [type : {"ReadRequest"}, key : Key, vc : VC, c : Client, p : Partition, d : Datacenter]
@@ -78,7 +80,7 @@ TypeOK ==
     /\ store \in [Partition -> [Datacenter -> SUBSET KVTuple]]
     /\ msgs \subseteq Message
     /\ incoming \in [Partition -> [Datacenter -> Seq(Message)]]
-    /\ L \in [Client -> Seq(KVTuple)]
+    /\ L \in [Client -> Seq(OpTuple)]
 --------------------------------------------------------------------------
 Init ==
     /\ cvc = [c \in Client |-> VCInit]   
@@ -133,7 +135,7 @@ ReadRequest(p, d) == \* handle a "ReadRequest"
                         /\ \A dc \in Datacenter \ {d}: kv.vc[dc] <= css'[p][d][dc]}
                lkv == CHOOSE kv \in kvs: \A akv \in kvs: LTE(akv.vc, kv.vc)
            IN /\ SendAndDelete([type |-> "ReadReply", val |-> lkv.val, vc |-> lkv.vc, c |-> m.c], m)
-              /\ L' = [L EXCEPT ![m.c] = Append(@, lkv)]
+              /\ L' = [L EXCEPT ![m.c] = Append(@, [type |-> "R", kv |-> lkv])]
     /\ UNCHANGED <<cVars, clock, pvc, store, incoming>>
 
 UpdateRequest(p, d) == \* handle a "UpdateRequest"
@@ -147,7 +149,7 @@ UpdateRequest(p, d) == \* handle a "UpdateRequest"
               /\ SendAndDelete([type |-> "UpdateReply", ts |-> clock[p][d], c |-> m.c, d |-> d], m)
               /\ incoming' = [incoming EXCEPT ![p] = [dc \in Datacenter |-> 
                    IF dc = d THEN @[dc] ELSE Append(@[dc], [type |-> "Replicate", d |-> d, kv |-> kv])]]
-              /\ L' = [L EXCEPT ![m.c] = Append(@, kv)]
+              /\ L' = [L EXCEPT ![m.c] = Append(@, [type |-> "R", kv |-> kv])]
     /\ UNCHANGED <<cVars, clock, pvc>>
     
 Replicate(p, d) == \* handle a "Replicate"

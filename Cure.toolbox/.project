@@ -25,5 +25,15 @@
 			<type>1</type>
 			<location>/usr/local/lib/tlaps/FiniteSets.tla</location>
 		</link>
+		<link>
+			<name>FunctionUtils.tla</name>
+			<type>1</type>
+			<location>/home/hengxin/hfwei/github-projects-public/cure-kvstore-tla/FunctionUtils.tla</location>
+		</link>
+		<link>
+			<name>RelationUtils.tla</name>
+			<type>1</type>
+			<location>/home/hengxin/hfwei/github-projects-public/cure-kvstore-tla/RelationUtils.tla</location>
+		</link>
 	</linkedResources>
 </projectDescription>

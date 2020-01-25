@@ -1,12 +1,11 @@
 ------------------------------ MODULE Cure ------------------------------- 
 (*
-  See ICDCS2016: "Cure: Strong Semantics Meets High Availability and Low Latency".
+See ICDCS2016: "Cure: Strong Semantics Meets High Availability and Low Latency".
 *)
-EXTENDS Naturals, Sequences, FiniteSets
+EXTENDS Naturals, Sequences, FiniteSets, TLC, RelationUtils
 --------------------------------------------------------------------------
 Max(a, b) == IF a < b THEN b ELSE a
 Min(S) == CHOOSE a \in S: \A b \in S: a <= b
-Injective(f) == \A a, b \in DOMAIN f: (a # b) => (f[a] # f[b]) 
 --------------------------------------------------------------------------
 CONSTANTS 
     Key,         \* the set of keys, ranged over by k \in Key
@@ -45,7 +44,6 @@ vars == <<cvc, clock, pvc, css, store, L, msgs, incoming>>
 VC == [Datacenter -> Nat]  \* vector clock with an entry per datacenter d \in Datacenter
 VCInit == [d \in Datacenter |-> 0]
 Merge(vc1, vc2) == [d \in Datacenter |-> Max(vc1[d], vc2[d])]
-KVTuple == [key : Key, val : Value \cup {NotVal}, vc : VC]
 
 DC == Cardinality(Datacenter)
 DCIndex == CHOOSE f \in [1 .. DC -> Datacenter] : Injective(f)
@@ -58,6 +56,9 @@ LTE(vc1, vc2) == \* less-than-or-equal-to comparator for vector clocks
                        [] vc1h[d] > vc2h[d] -> FALSE \* GT
                        [] OTHER -> LTEHelper(vc1h, vc2h, index + 1)
     IN  LTEHelper(vc1, vc2, 1)
+
+KVTuple == [key : Key, val : Value \cup {NotVal}, vc : VC]
+OpTuple == [type : {"R", "W"}, kv : KVTuple]
     
 Message ==
          [type : {"ReadRequest"}, key : Key, vc : VC, c : Client, p : Partition, d : Datacenter]
@@ -78,7 +79,7 @@ TypeOK ==
     /\ store \in [Partition -> [Datacenter -> SUBSET KVTuple]]
     /\ msgs \subseteq Message
     /\ incoming \in [Partition -> [Datacenter -> Seq(Message)]]
-    /\ L \in [Client -> Seq(KVTuple)]
+    /\ L \in [Client -> Seq(OpTuple)]
 --------------------------------------------------------------------------
 Init ==
     /\ cvc = [c \in Client |-> VCInit]   
@@ -93,7 +94,7 @@ Init ==
 --------------------------------------------------------------------------
 (* Client operations at client c \in Client. *)
 
-CanIssue(c) == \A m \in msgs: 
+CanIssue(c) == \A m \in msgs: \* to ensure well-formedness of clients
     m.type \in {"ReadRequest", "ReadReply", "UpdateRequest", "UpdateReply"} => m.c # c 
 
 Read(c, k) == \* c \in Client reads from k \in Key
@@ -133,7 +134,7 @@ ReadRequest(p, d) == \* handle a "ReadRequest"
                         /\ \A dc \in Datacenter \ {d}: kv.vc[dc] <= css'[p][d][dc]}
                lkv == CHOOSE kv \in kvs: \A akv \in kvs: LTE(akv.vc, kv.vc)
            IN /\ SendAndDelete([type |-> "ReadReply", val |-> lkv.val, vc |-> lkv.vc, c |-> m.c], m)
-              /\ L' = [L EXCEPT ![m.c] = Append(@, lkv)]
+              /\ L' = [L EXCEPT ![m.c] = Append(@, [type |-> "R", kv |-> lkv])]
     /\ UNCHANGED <<cVars, clock, pvc, store, incoming>>
 
 UpdateRequest(p, d) == \* handle a "UpdateRequest"
@@ -147,7 +148,7 @@ UpdateRequest(p, d) == \* handle a "UpdateRequest"
               /\ SendAndDelete([type |-> "UpdateReply", ts |-> clock[p][d], c |-> m.c, d |-> d], m)
               /\ incoming' = [incoming EXCEPT ![p] = [dc \in Datacenter |-> 
                    IF dc = d THEN @[dc] ELSE Append(@[dc], [type |-> "Replicate", d |-> d, kv |-> kv])]]
-              /\ L' = [L EXCEPT ![m.c] = Append(@, kv)]
+              /\ L' = [L EXCEPT ![m.c] = Append(@, [type |-> "R", kv |-> kv])]
     /\ UNCHANGED <<cVars, clock, pvc>>
     
 Replicate(p, d) == \* handle a "Replicate"
@@ -193,4 +194,36 @@ Next ==
         \/ UpdateCSS(p, d)
 
 Spec == Init /\ [][Next]_vars
+--------------------------------------------------------------------------
+so == UNION {SeqToRel(L[c]): c \in Client} \* session order
+
+rf == \* read-from (or called writes-into) relation
+    LET ops == UNION {Range(L[c]): c \in Client}
+        rops == {op \in ops: op.type = "R"}
+        keys == {op.kv.key: op \in rops}
+        wops == {op \in ops: op.type = "W"} \cup \* initial writes
+                    [type : {"W"}, kv : [key : keys, val : {NotVal}, vc : {VCInit}]]
+    IN  {<<w, r>> \in wops \X rops: w.kv.key = r.kv.key /\ w.kv.vc = r.kv.vc}
+
+co == TC(so \cup rf) \* causality order
+
+Valid(s) == \* Is s a valid serialization?
+    LET RECURSIVE ValidHelper(_, _)
+        ValidHelper(seq, kvs) ==
+            IF seq = <<>> THEN TRUE
+            ELSE LET op == Head(seq)
+                 IN  IF op.type = "W"
+                     THEN ValidHelper(Tail(seq), kvs @@ op.kv.key :> op.kv.vc)
+                     ELSE /\ op.kv.vc = kvs[op.kv.key]
+                          /\ ValidHelper(Tail(seq), kvs)
+    IN  ValidHelper(s, {})
+
+(* TODO: Handling initial writes *)
+CM == \* causal memory consistency model; see DC'1995
+    LET ops == UNION {Range(L[c]): c \in Client}
+        wops == {op \in ops: op.type = "W"}
+    IN  \A c \in Client: 
+            \E sc \in Seq(Range(L[c]) \cup wops): \* TODO: performance?
+                /\ Valid(sc)
+                /\ Respect(sc, co)
 =============================================================================
