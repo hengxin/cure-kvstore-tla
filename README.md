@@ -67,15 +67,20 @@ TLA+ Spec for the Cure Key-Value Store
   - [x] +`SeqToRel`
 ### 2020-01-26
 - [ ] Handling `NotVal` in `CM`
+  - [x] Redefine `Valid(s)` with initial values for keys
 - [ ] Testing `CM`
+  - [x] +state constraint: `\A c \in Client: Len(L[c]) <= 3`
+  - [ ] "upon termination only?"
 
-### 2020-01-26
+### 2020-01-27
 - [ ] `S[c]` for serialization
+
+### 2020-01-28
+- [ ] `n^5` checking algorithm for CM
 
 ## TODO
 - Version without Heartbeat
   - Check liveness
-- Replacing `updates` with `fifo`
 - Properties
   - Safety
     - `TypeOK`
@@ -83,3 +88,10 @@ TLA+ Spec for the Cure Key-Value Store
     - `css[p][d]` non-decreasing
     - CM
   - Liveness
+
+## TLA+
+- [ ] googlegroup: "checking safety upon termination only?"
+- [ ] CostModel:
+> CostModel lookup failed for expression `<line 54, col 36 to line 54, col 67 of module Cure>`.
+Reporting costs into `<line 52, col 22 to line 54, col 67 of module Cure>` instead 
+(Safety and Liveness checking is unaffected. Please report a bug.)

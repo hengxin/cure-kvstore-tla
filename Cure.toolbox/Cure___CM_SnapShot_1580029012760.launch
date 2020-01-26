@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <launchConfiguration type="org.lamport.tla.toolbox.tool.tlc.modelCheck">
-    <stringAttribute key="configurationName" value="TypeOK"/>
+    <stringAttribute key="configurationName" value="CM_SnapShot_1580029012760"/>
     <intAttribute key="distributedFPSetCount" value="0"/>
     <stringAttribute key="distributedNetworkInterface" value="114.212.82.52"/>
     <intAttribute key="distributedNodesCount" value="1"/>
     <stringAttribute key="distributedTLC" value="off"/>
-    <intAttribute key="fpIndex" value="60"/>
+    <intAttribute key="fpIndex" value="0"/>
     <intAttribute key="maxHeapSize" value="80"/>
     <stringAttribute key="modelBehaviorInit" value=""/>
     <stringAttribute key="modelBehaviorNext" value=""/>
     <stringAttribute key="modelBehaviorSpec" value="Spec"/>
     <intAttribute key="modelBehaviorSpecType" value="1"/>
-    <stringAttribute key="modelBehaviorVars" value="msgs, store, pvc, css, cvc, clock, incoming"/>
+    <stringAttribute key="modelBehaviorVars" value="css, L, cvc, store, clock, msgs, incoming, pvc"/>
     <stringAttribute key="modelComments" value="For TypeOK."/>
     <booleanAttribute key="modelCorrectnessCheckDeadlock" value="false"/>
     <listAttribute key="modelCorrectnessInvariants">
-        <listEntry value="1TypeOK"/>
+        <listEntry value="1CM"/>
     </listAttribute>
     <listAttribute key="modelCorrectnessProperties"/>
-    <intAttribute key="modelEditorOpenTabs" value="2"/>
+    <intAttribute key="modelEditorOpenTabs" value="6"/>
     <stringAttribute key="modelExpressionEval" value=""/>
     <stringAttribute key="modelParameterActionConstraint" value=""/>
     <listAttribute key="modelParameterConstants">
@@ -30,7 +30,7 @@
         <listEntry value="Value;;{v};1;0"/>
         <listEntry value="Client;;{c1, c2};1;1"/>
     </listAttribute>
-    <stringAttribute key="modelParameterContraint" value=""/>
+    <stringAttribute key="modelParameterContraint" value="\A c \in Client: Len(L[c]) &lt;= 3"/>
     <listAttribute key="modelParameterDefinitions">
         <listEntry value="NotVal;;NotVal;1;0"/>
     </listAttribute>

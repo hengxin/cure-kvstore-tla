@@ -2,7 +2,10 @@
 (*
 See ICDCS2016: "Cure: Strong Semantics Meets High Availability and Low Latency".
 *)
-EXTENDS Naturals, Sequences, FiniteSets, TLC, RelationUtils, MathUtils
+EXTENDS Naturals, Sequences, FiniteSets, TLC, RelationUtils
+--------------------------------------------------------------------------
+Max(a, b) == IF a < b THEN b ELSE a
+Min(S) == CHOOSE a \in S: \A b \in S: a <= b
 --------------------------------------------------------------------------
 CONSTANTS 
     Key,         \* the set of keys, ranged over by k \in Key
@@ -175,7 +178,7 @@ Tick(p, d) == \* clock[p][d] ticks
     
 UpdateCSS(p, d) == \* update css[p][d]
     /\ css' = [css EXCEPT ![p][d] = 
-                [dc \in Datacenter |-> SetMin({pvc[pp][d][dc] : pp \in Partition})]]    
+                [dc \in Datacenter |-> Min({pvc[pp][d][dc] : pp \in Partition})]]    
     /\ UNCHANGED <<cVars, mVars, clock, pvc, store, L>>                                       
 --------------------------------------------------------------------------
 Next == 
@@ -197,7 +200,9 @@ so == UNION {SeqToRel(L[c]): c \in Client} \* session order
 rf == \* read-from (or called writes-into) relation
     LET ops == UNION {Range(L[c]): c \in Client}
         rops == {op \in ops: op.type = "R"}
-        wops == {op \in ops: op.type = "W"}
+        keys == {op.kv.key: op \in rops}
+        wops == {op \in ops: op.type = "W"} \cup \* initial writes
+                    [type : {"W"}, kv : [key : keys, val : {NotVal}, vc : {VCInit}]]
     IN  {<<w, r>> \in wops \X rops: w.kv.key = r.kv.key /\ w.kv.vc = r.kv.vc}
 
 co == TC(so \cup rf) \* causality order
@@ -211,15 +216,14 @@ Valid(s) == \* Is s a valid serialization?
                      THEN ValidHelper(Tail(seq), kvs @@ op.kv.key :> op.kv.vc)
                      ELSE /\ op.kv.vc = kvs[op.kv.key]
                           /\ ValidHelper(Tail(seq), kvs)
-    IN  ValidHelper(s, [k \in Key |-> VCInit])  \* with initial values
+    IN  ValidHelper(s, {})
 
-CM == \* causal memory consistency model; see Ahamad@DC'1995
+(* TODO: Handling initial writes *)
+CM == \* causal memory consistency model; see DC'1995
     LET ops == UNION {Range(L[c]): c \in Client}
         wops == {op \in ops: op.type = "W"}
     IN  \A c \in Client: 
             \E sc \in Seq(Range(L[c]) \cup wops): \* TODO: performance?
                 /\ Valid(sc)
                 /\ Respect(sc, co)
-                
-THEOREM Spec => []CM                
 =============================================================================

@@ -31,9 +31,24 @@
 			<location>/home/hengxin/hfwei/github-projects-public/cure-kvstore-tla/FunctionUtils.tla</location>
 		</link>
 		<link>
+			<name>MathUtils.tla</name>
+			<type>1</type>
+			<location>/home/hengxin/hfwei/github-projects-public/cure-kvstore-tla/MathUtils.tla</location>
+		</link>
+		<link>
 			<name>RelationUtils.tla</name>
 			<type>1</type>
 			<location>/home/hengxin/hfwei/github-projects-public/cure-kvstore-tla/RelationUtils.tla</location>
+		</link>
+		<link>
+			<name>SequenceUtils.tla</name>
+			<type>1</type>
+			<location>/home/hengxin/hfwei/github-projects-public/cure-kvstore-tla/SequenceUtils.tla</location>
+		</link>
+		<link>
+			<name>SetUtils.tla</name>
+			<type>1</type>
+			<location>/home/hengxin/hfwei/github-projects-public/cure-kvstore-tla/SetUtils.tla</location>
 		</link>
 	</linkedResources>
 </projectDescription>

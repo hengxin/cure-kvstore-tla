@@ -2,7 +2,7 @@
 (*
 See ICDCS2016: "Cure: Strong Semantics Meets High Availability and Low Latency".
 *)
-EXTENDS Naturals, Sequences, FiniteSets, TLC, RelationUtils, MathUtils
+EXTENDS Naturals, FiniteSets, TLC, SequenceUtils, RelationUtils, MathUtils
 --------------------------------------------------------------------------
 CONSTANTS 
     Key,         \* the set of keys, ranged over by k \in Key
@@ -207,8 +207,8 @@ Valid(s) == \* Is s a valid serialization?
         ValidHelper(seq, kvs) ==
             IF seq = <<>> THEN TRUE
             ELSE LET op == Head(seq)
-                 IN  IF op.type = "W"
-                     THEN ValidHelper(Tail(seq), kvs @@ op.kv.key :> op.kv.vc)
+                 IN  IF op.type = "W"                                 \* overwritten
+                     THEN ValidHelper(Tail(seq), op.kv.key :> op.kv.vc @@ kvs)
                      ELSE /\ op.kv.vc = kvs[op.kv.key]
                           /\ ValidHelper(Tail(seq), kvs)
     IN  ValidHelper(s, [k \in Key |-> VCInit])  \* with initial values
@@ -217,9 +217,9 @@ CM == \* causal memory consistency model; see Ahamad@DC'1995
     LET ops == UNION {Range(L[c]): c \in Client}
         wops == {op \in ops: op.type = "W"}
     IN  \A c \in Client: 
-            \E sc \in Seq(Range(L[c]) \cup wops): \* TODO: performance?
-                /\ Valid(sc)
-                /\ Respect(sc, co)
+            \E sc \in PermutationsOf(L[c] \o SetToSeq(wops)): \* TODO: performance?
+                Valid(sc)
+                \* /\ Respect(SeqToRel(sc), co)
                 
 THEOREM Spec => []CM                
 =============================================================================
