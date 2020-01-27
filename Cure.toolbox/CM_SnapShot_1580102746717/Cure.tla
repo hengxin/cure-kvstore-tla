@@ -2,10 +2,7 @@
 (*
 See ICDCS2016: "Cure: Strong Semantics Meets High Availability and Low Latency".
 *)
-EXTENDS Naturals, Sequences, FiniteSets, TLC, RelationUtils
---------------------------------------------------------------------------
-Max(a, b) == IF a < b THEN b ELSE a
-Min(S) == CHOOSE a \in S: \A b \in S: a <= b
+EXTENDS Naturals, FiniteSets, TLC, SequenceUtils, RelationUtils, MathUtils
 --------------------------------------------------------------------------
 CONSTANTS 
     Key,         \* the set of keys, ranged over by k \in Key
@@ -148,7 +145,7 @@ UpdateRequest(p, d) == \* handle a "UpdateRequest"
               /\ SendAndDelete([type |-> "UpdateReply", ts |-> clock[p][d], c |-> m.c, d |-> d], m)
               /\ incoming' = [incoming EXCEPT ![p] = [dc \in Datacenter |-> 
                    IF dc = d THEN @[dc] ELSE Append(@[dc], [type |-> "Replicate", d |-> d, kv |-> kv])]]
-              /\ L' = [L EXCEPT ![m.c] = Append(@, [type |-> "R", kv |-> kv])]
+              /\ L' = [L EXCEPT ![m.c] = Append(@, [type |-> "W", kv |-> kv])]
     /\ UNCHANGED <<cVars, clock, pvc>>
     
 Replicate(p, d) == \* handle a "Replicate"
@@ -178,7 +175,7 @@ Tick(p, d) == \* clock[p][d] ticks
     
 UpdateCSS(p, d) == \* update css[p][d]
     /\ css' = [css EXCEPT ![p][d] = 
-                [dc \in Datacenter |-> Min({pvc[pp][d][dc] : pp \in Partition})]]    
+                [dc \in Datacenter |-> SetMin({pvc[pp][d][dc] : pp \in Partition})]]    
     /\ UNCHANGED <<cVars, mVars, clock, pvc, store, L>>                                       
 --------------------------------------------------------------------------
 Next == 
@@ -195,35 +192,30 @@ Next ==
 
 Spec == Init /\ [][Next]_vars
 --------------------------------------------------------------------------
-so == UNION {SeqToRel(L[c]): c \in Client} \* session order
-
-rf == \* read-from (or called writes-into) relation
-    LET ops == UNION {Range(L[c]): c \in Client}
-        rops == {op \in ops: op.type = "R"}
-        keys == {op.kv.key: op \in rops}
-        wops == {op \in ops: op.type = "W"} \cup \* initial writes
-                    [type : {"W"}, kv : [key : keys, val : {NotVal}, vc : {VCInit}]]
-    IN  {<<w, r>> \in wops \X rops: w.kv.key = r.kv.key /\ w.kv.vc = r.kv.vc}
-
-co == TC(so \cup rf) \* causality order
-
 Valid(s) == \* Is s a valid serialization?
     LET RECURSIVE ValidHelper(_, _)
         ValidHelper(seq, kvs) ==
             IF seq = <<>> THEN TRUE
             ELSE LET op == Head(seq)
-                 IN  IF op.type = "W"
-                     THEN ValidHelper(Tail(seq), kvs @@ op.kv.key :> op.kv.vc)
+                 IN  IF op.type = "W"                                 \* overwritten
+                     THEN ValidHelper(Tail(seq), op.kv.key :> op.kv.vc @@ kvs)
                      ELSE /\ op.kv.vc = kvs[op.kv.key]
                           /\ ValidHelper(Tail(seq), kvs)
-    IN  ValidHelper(s, {})
+    IN  ValidHelper(s, [k \in Key |-> VCInit])  \* with initial values
 
-(* TODO: Handling initial writes *)
-CM == \* causal memory consistency model; see DC'1995
+CM == \* causal memory consistency model; see Ahamad@DC'1995
     LET ops == UNION {Range(L[c]): c \in Client}
+        rops == {op \in ops: op.type = "R"}
         wops == {op \in ops: op.type = "W"}
-    IN  \A c \in Client: 
-            \E sc \in Seq(Range(L[c]) \cup wops): \* TODO: performance?
+        so == UNION {SeqToRel(L[c]): c \in Client} \* session order
+        rf == {<<w, r>> \in wops \X rops: w.kv.key = r.kv.key /\ w.kv.vc = r.kv.vc}
+        co == TC(so \cup rf) \* causality order
+    IN  /\ PrintT(<<so, rf, co>>)
+        /\ \A c \in Client: 
+            \E sc \in PermutationsOf(L[c] \o SetToSeq(wops)):
                 /\ Valid(sc)
-                /\ Respect(sc, co)
+                /\ PrintT(<<sc, co, Respect(SeqToRel(sc), co)>>)
+                /\ Respect(SeqToRel(sc), co)
+                
+THEOREM Spec => []CM                
 =============================================================================

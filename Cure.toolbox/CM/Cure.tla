@@ -55,7 +55,7 @@ LTE(vc1, vc2) == \* less-than-or-equal-to comparator for vector clocks
     IN  LTEHelper(vc1, vc2, 1)
 
 KVTuple == [key : Key, val : Value \cup {NotVal}, vc : VC]
-OpTuple == [type : {"R", "W"}, kv : KVTuple]
+OpTuple == [type : {"R", "W"}, kv : KVTuple, c : Client, cnt : Nat]
     
 Message ==
          [type : {"ReadRequest"}, key : Key, vc : VC, c : Client, p : Partition, d : Datacenter]
@@ -131,7 +131,7 @@ ReadRequest(p, d) == \* handle a "ReadRequest"
                         /\ \A dc \in Datacenter \ {d}: kv.vc[dc] <= css'[p][d][dc]}
                lkv == CHOOSE kv \in kvs: \A akv \in kvs: LTE(akv.vc, kv.vc)
            IN /\ SendAndDelete([type |-> "ReadReply", val |-> lkv.val, vc |-> lkv.vc, c |-> m.c], m)
-              /\ L' = [L EXCEPT ![m.c] = Append(@, [type |-> "R", kv |-> lkv])]
+              /\ L' = [L EXCEPT ![m.c] = Append(@, [type |-> "R", kv |-> lkv, c |-> m.c, cnt |-> Len(@) + 1])]
     /\ UNCHANGED <<cVars, clock, pvc, store, incoming>>
 
 UpdateRequest(p, d) == \* handle a "UpdateRequest"
@@ -145,7 +145,7 @@ UpdateRequest(p, d) == \* handle a "UpdateRequest"
               /\ SendAndDelete([type |-> "UpdateReply", ts |-> clock[p][d], c |-> m.c, d |-> d], m)
               /\ incoming' = [incoming EXCEPT ![p] = [dc \in Datacenter |-> 
                    IF dc = d THEN @[dc] ELSE Append(@[dc], [type |-> "Replicate", d |-> d, kv |-> kv])]]
-              /\ L' = [L EXCEPT ![m.c] = Append(@, [type |-> "R", kv |-> kv])]
+              /\ L' = [L EXCEPT ![m.c] = Append(@, [type |-> "W", kv |-> kv, c |-> m.c, cnt |-> Len(@) + 1])]
     /\ UNCHANGED <<cVars, clock, pvc>>
     
 Replicate(p, d) == \* handle a "Replicate"
@@ -192,16 +192,6 @@ Next ==
 
 Spec == Init /\ [][Next]_vars
 --------------------------------------------------------------------------
-so == UNION {SeqToRel(L[c]): c \in Client} \* session order
-
-rf == \* read-from (or called writes-into) relation
-    LET ops == UNION {Range(L[c]): c \in Client}
-        rops == {op \in ops: op.type = "R"}
-        wops == {op \in ops: op.type = "W"}
-    IN  {<<w, r>> \in wops \X rops: w.kv.key = r.kv.key /\ w.kv.vc = r.kv.vc}
-
-co == TC(so \cup rf) \* causality order
-
 Valid(s) == \* Is s a valid serialization?
     LET RECURSIVE ValidHelper(_, _)
         ValidHelper(seq, kvs) ==
@@ -215,11 +205,17 @@ Valid(s) == \* Is s a valid serialization?
 
 CM == \* causal memory consistency model; see Ahamad@DC'1995
     LET ops == UNION {Range(L[c]): c \in Client}
+        rops == {op \in ops: op.type = "R"}
         wops == {op \in ops: op.type = "W"}
-    IN  \A c \in Client: 
-            \E sc \in PermutationsOf(L[c] \o SetToSeq(wops)): \* TODO: performance?
+        so == UNION {SeqToRel(L[c]): c \in Client} \* session order
+        rf == {<<w, r>> \in wops \X rops: w.kv.key = r.kv.key /\ w.kv.vc = r.kv.vc}
+        co == TC(so \cup rf) \* causality order
+    IN  /\ PrintT(<<so, rf, co>>)
+        /\ \A c \in Client: 
+            \E sc \in PermutationsOf(L[c] \o SetToSeq(wops)):
                 /\ Valid(sc)
-                \* /\ Respect(SeqToRel(sc), co)
+                /\ PrintT(<<sc, co, Respect(sc, co)>>)
+                /\ Respect(sc, co)
                 
 THEOREM Spec => []CM                
 =============================================================================

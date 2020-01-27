@@ -940,637 +940,183 @@
 \tlatex
 \setboolean{shading}{true}
  \@x{\makebox[0pt][r]{\scriptsize 1\hspace{1em}}}\moduleLeftDash\@xx{
- {\MODULE} Cure}\moduleRightDash\@xx{}%
+ {\MODULE} RelationUtils}\moduleRightDash\@xx{}%
 \begin{lcom}{0}%
 \begin{cpar}{0}{F}{F}{0}{0}{}%
- See \ensuremath{ICDCS2016}: ``Cure: Strong Semantics Meets High Availability
- and Low Latency''.
+Relation related operators.
 \end{cpar}%
 \end{lcom}%
  \@x{\makebox[0pt][r]{\scriptsize 5\hspace{1em}} {\EXTENDS} Naturals ,\,
- FiniteSets ,\, TLC ,\, SequenceUtils ,\, RelationUtils ,\, MathUtils}%
+ Sequences ,\, FunctionUtils}%
 \@x{\makebox[0pt][r]{\scriptsize 6\hspace{1em}}}\midbar\@xx{}%
-\@x{\makebox[0pt][r]{\scriptsize 7\hspace{1em}} {\CONSTANTS}}%
-\@x{\makebox[0pt][r]{\scriptsize 8\hspace{1em}}\@s{16.4} Key ,\,\@s{34.69}}%
+\begin{lcom}{0}%
+\begin{cpar}{0}{F}{F}{0}{0}{}%
+Basic definitions.
+\end{cpar}%
+\end{lcom}%
+ \@x{\makebox[0pt][r]{\scriptsize 10\hspace{1em}} Dom ( R ) \.{\defeq} \{ a
+ \.{:} {\langle} a ,\, b {\rangle} \.{\in} R \}}%
 \@y{\@s{0}%
- the set of keys, ranged over by \ensuremath{k \.{\in} Key
+ Domain of \ensuremath{R
 }}%
 \@xx{}%
-\@x{\makebox[0pt][r]{\scriptsize 9\hspace{1em}}\@s{16.4} Value ,\,\@s{27.66}}%
+ \@x{\makebox[0pt][r]{\scriptsize 11\hspace{1em}} Ran ( R )\@s{3.32}
+ \.{\defeq} \{ b\@s{0.64} \.{:} {\langle} a ,\, b {\rangle} \.{\in} R \}}%
 \@y{\@s{0}%
- the set of values, ranged over by \ensuremath{v \.{\in} Value
+ Range of \ensuremath{R
 }}%
 \@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 10\hspace{1em}}\@s{16.4} Client
- ,\,\@s{25.44}}%
+ \@x{\makebox[0pt][r]{\scriptsize 12\hspace{1em}} Support ( R ) \.{\defeq} Dom
+ ( R ) \.{\cup} Ran ( R )}%
 \@y{\@s{0}%
- the set of clients, ranged over by \ensuremath{c \.{\in} Client
+ Support of \ensuremath{R
 }}%
 \@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 11\hspace{1em}}\@s{16.4} Partition
- ,\,\@s{12.33}}%
+\begin{lcom}{0}%
+\begin{cpar}{0}{F}{F}{0}{0}{}%
+Basic operations.
+\end{cpar}%
+\end{lcom}%
+ \@x{\makebox[0pt][r]{\scriptsize 16\hspace{1em}} Inverse ( R ) \.{\defeq} \{
+ {\langle} b ,\, a {\rangle} \.{:} {\langle} a ,\, b {\rangle} \.{\in} R \}}%
 \@y{\@s{0}%
- the set of partitions, ranged over by \ensuremath{p \.{\in} Partition
+ Inverse of \ensuremath{R
 }}%
 \@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 12\hspace{1em}}\@s{16.4} Datacenter
- ,\,\@s{4.09}}%
+ \@x{\makebox[0pt][r]{\scriptsize 17\hspace{1em}} R \.{\,|\,} S \.{\defeq} R
+ \.{\cap} S \.{\times} S}%
 \@y{\@s{0}%
- the set of datacenters, ranged over by \ensuremath{d \.{\in} Datacenter
-}}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 13\hspace{1em}}\@s{16.4} KeySharding
- ,\,\@s{20.5}}%
-\@y{\@s{0}%
- the mapping from \ensuremath{Key} to \ensuremath{Partition
-}}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 14\hspace{1em}}\@s{16.4}
- ClientAttachment\@s{4.95}}%
-\@y{\@s{0}%
- the mapping from \ensuremath{Client} to \ensuremath{Datacenter
+ Restriction of \ensuremath{R} on \ensuremath{S
 }}%
 \@xx{}%
 \@pvspace{8.0pt}%
- \@x{\makebox[0pt][r]{\scriptsize 16\hspace{1em}} NotVal \.{\defeq} {\CHOOSE}
- v \.{:} v \.{\notin} Value}%
-\@pvspace{8.0pt}%
-\@x{\makebox[0pt][r]{\scriptsize 18\hspace{1em}} {\ASSUME}}%
- \@x{\makebox[0pt][r]{\scriptsize 19\hspace{1em}}\@s{16.4} \.{\land}
- KeySharding \.{\in} [ Key \.{\rightarrow} Partition ]}%
- \@x{\makebox[0pt][r]{\scriptsize 20\hspace{1em}}\@s{16.4} \.{\land}
- ClientAttachment \.{\in} [ Client \.{\rightarrow} Datacenter ]}%
-\@x{\makebox[0pt][r]{\scriptsize 21\hspace{1em}}}\midbar\@xx{}%
-\@x{\makebox[0pt][r]{\scriptsize 22\hspace{1em}} {\VARIABLES}}%
-\@x{\makebox[0pt][r]{\scriptsize 23\hspace{1em}}}%
+\@x{\makebox[0pt][r]{\scriptsize 19\hspace{1em}} R \.{\stst} T \.{\defeq}}%
 \@y{\@s{0}%
- At the client side:
-}%
-\@xx{}%
-\@x{\makebox[0pt][r]{\scriptsize 24\hspace{1em}}\@s{16.4} cvc ,\,\@s{4.1}}%
-\@y{\@s{0}%
- \ensuremath{cvc[c]}: the vector clock of client \ensuremath{c \.{\in} Client
+ Composition of \ensuremath{R} and \ensuremath{T
 }}%
 \@xx{}%
-\@x{\makebox[0pt][r]{\scriptsize 25\hspace{1em}}}%
+ \@x{\makebox[0pt][r]{\scriptsize 20\hspace{1em}}\@s{15.88} \.{\LET}
+ SR\@s{4.90} \.{\defeq} Support ( R )}%
+ \@x{\makebox[0pt][r]{\scriptsize 21\hspace{1em}}\@s{40.38} ST \.{\defeq}
+ Support ( T )}%
+ \@x{\makebox[0pt][r]{\scriptsize 22\hspace{1em}}\@s{15.88} \.{\IN}\@s{4.09}
+ \{ {\langle} r ,\, t {\rangle} \.{\in} SR \.{\times} ST \.{:} \E\, s \.{\in}
+ SR \.{\cap} ST \.{:} ( {\langle} r ,\, s {\rangle} \.{\in} R ) \.{\land} (
+ {\langle} s ,\, t {\rangle} \.{\in} T ) \}}%
+\@pvspace{8.0pt}%
+ \@x{\makebox[0pt][r]{\scriptsize 24\hspace{1em}} GT ( R ,\, a ) \.{\defeq} \{
+ b\@s{0.64} \.{\in} Ran ( R )\@s{3.32} \.{:} {\langle} a ,\, b {\rangle}
+ \.{\in} R \}}%
+ \@x{\makebox[0pt][r]{\scriptsize 25\hspace{1em}} LT ( R ,\, b )\@s{2.87}
+ \.{\defeq} \{ a \.{\in} Dom ( R ) \.{:} {\langle} a ,\, b {\rangle} \.{\in}
+ R \}}%
+\begin{lcom}{0}%
+\begin{cpar}{0}{F}{F}{0}{0}{}%
+The following definition is from
+ https:\ensuremath{\.{\slsl}github.com}/jameshfisher/tlaplus/blob/master/examples/\ensuremath{TransitiveClosure}/\ensuremath{TransitiveClosure.tla
+} It also contains several other methods for computing \ensuremath{TC}.
+\end{cpar}%
+\end{lcom}%
+\@x{\makebox[0pt][r]{\scriptsize 31\hspace{1em}} TC ( R ) \.{\defeq}}%
 \@y{\@s{0}%
- At the server side (each for partition \ensuremath{p \.{\in} Partition} in
- \ensuremath{d \.{\in} Datacenter}):
-}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 26\hspace{1em}}\@s{16.4} clock
- ,\,\@s{12.09}}%
-\@y{\@s{0}%
- \ensuremath{clock[p][d]}: the current clock
-}%
-\@xx{}%
-\@x{\makebox[0pt][r]{\scriptsize 27\hspace{1em}}\@s{16.4} pvc ,\,\@s{19.25}}%
-\@y{\@s{0}%
- \ensuremath{pvc[p][d]}: the vector clock
-}%
-\@xx{}%
-\@x{\makebox[0pt][r]{\scriptsize 28\hspace{1em}}\@s{16.4} css ,\,\@s{20.53}}%
-\@y{\@s{0}%
- \ensuremath{css[p][d]}: the stable snapshot
-}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 29\hspace{1em}}\@s{16.4} store
- ,\,\@s{12.54}}%
-\@y{\@s{0}%
- \ensuremath{store[p][d]}: the \ensuremath{kv} store
-}%
-\@xx{}%
-\@x{\makebox[0pt][r]{\scriptsize 30\hspace{1em}}}%
-\@y{\@s{0}%
- history:
-}%
-\@xx{}%
-\@x{\makebox[0pt][r]{\scriptsize 31\hspace{1em}}\@s{16.4} L ,\,}%
-\@y{\@s{0}%
- \ensuremath{L[c]}: local history at client \ensuremath{c \.{\in} Client
+ Transitive closure of \ensuremath{R
 }}%
 \@xx{}%
-\@x{\makebox[0pt][r]{\scriptsize 32\hspace{1em}}}%
+ \@x{\makebox[0pt][r]{\scriptsize 32\hspace{1em}}\@s{27.33} \.{\LET} S
+ \.{\defeq} Support ( R )}%
+ \@x{\makebox[0pt][r]{\scriptsize 33\hspace{1em}}\@s{47.73} {\RECURSIVE} TCR (
+ \_ )}%
+ \@x{\makebox[0pt][r]{\scriptsize 34\hspace{1em}}\@s{51.83} TCR ( T )
+ \.{\defeq} {\IF} T \.{=} \{ \}}%
+\@x{\makebox[0pt][r]{\scriptsize 35\hspace{1em}}\@s{108.97} \.{\THEN} R}%
+ \@x{\makebox[0pt][r]{\scriptsize 36\hspace{1em}}\@s{108.97} \.{\ELSE}
+ \.{\LET} r \.{\defeq} {\CHOOSE} s \.{\in} T \.{:} {\TRUE}}%
+ \@x{\makebox[0pt][r]{\scriptsize 37\hspace{1em}}\@s{164.78} RR \.{\defeq} TCR
+ ( T \.{\,\backslash\,} \{ r \} )}%
+ \@x{\makebox[0pt][r]{\scriptsize 38\hspace{1em}}\@s{140.28} \.{\IN}\@s{4.10}
+ RR \.{\cup} \{ {\langle} s ,\, t {\rangle} \.{\in} S \.{\times} S \.{:}}%
+ \@x{\makebox[0pt][r]{\scriptsize 39\hspace{1em}}\@s{199.76} {\langle} s ,\, r
+ {\rangle} \.{\in} RR \.{\land} {\langle} r ,\, t {\rangle} \.{\in} RR \}}%
+ \@x{\makebox[0pt][r]{\scriptsize 40\hspace{1em}}\@s{27.33} \.{\IN}\@s{4.09}
+ TCR ( S )}%
+\begin{lcom}{0}%
+\begin{cpar}{0}{F}{F}{0}{0}{}%
+ Example: \ensuremath{SeqToRel({\langle}1,\, 2,\, 3{\rangle}) \.{=}
+ \{{\langle}1,\, 2{\rangle},\, {\langle}1,\, 3{\rangle},\, {\langle}2,\,
+ 3{\rangle}\}
+}%
+\end{cpar}%
+\end{lcom}%
+\@x{\makebox[0pt][r]{\scriptsize 44\hspace{1em}} SeqToRel ( s ) \.{\defeq}}%
 \@y{\@s{0}%
- communication:
+ Transform a (total order) sequence to a relation
 }%
 \@xx{}%
-\@x{\makebox[0pt][r]{\scriptsize 33\hspace{1em}}\@s{16.4} msgs ,\,}%
+ \@x{\makebox[0pt][r]{\scriptsize 45\hspace{1em}}\@s{16.4} \.{\LET}\@s{3.98}
+ {\RECURSIVE} SeqRel ( \_ ,\, \_ )}%
+ \@x{\makebox[0pt][r]{\scriptsize 46\hspace{1em}}\@s{40.89} SeqRel ( seq ,\,
+ rel ) \.{\defeq}}%
+ \@x{\makebox[0pt][r]{\scriptsize 47\hspace{1em}}\@s{57.29} {\IF} Len ( seq )
+ \.{\leq} 1}%
+\@x{\makebox[0pt][r]{\scriptsize 48\hspace{1em}}\@s{57.29} \.{\THEN} rel}%
+ \@x{\makebox[0pt][r]{\scriptsize 49\hspace{1em}}\@s{57.29} \.{\ELSE} \.{\LET}
+ h\@s{2.49} \.{\defeq} Head ( seq )}%
+ \@x{\makebox[0pt][r]{\scriptsize 50\hspace{1em}}\@s{113.11} t \.{\defeq} Tail
+ ( seq )}%
+ \@x{\makebox[0pt][r]{\scriptsize 51\hspace{1em}}\@s{88.61} \.{\IN}\@s{4.09}
+ SeqRel ( t ,\, rel \.{\cup} \{ {\langle} h ,\, r {\rangle} \.{:} r \.{\in}
+ Range ( t ) \} )}%
+ \@x{\makebox[0pt][r]{\scriptsize 52\hspace{1em}}\@s{16.4} \.{\IN}\@s{4.09}
+ SeqRel ( s ,\, \{ \} )}%
+\begin{lcom}{0}%
+\begin{cpar}{0}{F}{F}{0}{0}{}%
+Basic properties.
+\end{cpar}%
+\end{lcom}%
+ \@x{\makebox[0pt][r]{\scriptsize 56\hspace{1em}} Reflexive ( S ,\, R )
+ \.{\defeq} \forall\, a \.{\in} S \.{:} {\langle} a ,\, a {\rangle} \.{\in}
+ R}%
 \@y{\@s{0}%
- the set of messages in transit
-}%
-\@xx{}%
-\@x{\makebox[0pt][r]{\scriptsize 34\hspace{1em}}\@s{16.4} incoming}%
-\@y{\@s{0}%
- \ensuremath{incoming[p][d]}: incoming \ensuremath{FIFO} channel for
- propagating updates and heartbeats
+ is \ensuremath{R} reflexive\.{?}
 }%
 \@xx{}%
 \@pvspace{8.0pt}%
- \@x{\makebox[0pt][r]{\scriptsize 36\hspace{1em}} cVars\@s{3.57} \.{\defeq}
- {\langle} cvc {\rangle}}%
- \@x{\makebox[0pt][r]{\scriptsize 37\hspace{1em}} sVars\@s{4.08} \.{\defeq}
- {\langle} clock ,\, pvc ,\, css ,\, store ,\, L {\rangle}}%
- \@x{\makebox[0pt][r]{\scriptsize 38\hspace{1em}} mVars \.{\defeq} {\langle}
- msgs ,\, incoming {\rangle}}%
- \@x{\makebox[0pt][r]{\scriptsize 39\hspace{1em}} vars \.{\defeq} {\langle}
- cvc ,\, clock ,\, pvc ,\, css ,\, store ,\, L ,\, msgs ,\, incoming
- {\rangle}}%
-\@x{\makebox[0pt][r]{\scriptsize 40\hspace{1em}}}\midbar\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 41\hspace{1em}} VC \.{\defeq} [ Datacenter
- \.{\rightarrow} Nat ]\@s{4.1}}%
+\@x{\makebox[0pt][r]{\scriptsize 58\hspace{1em}} Transitive ( R ) \.{\defeq}}%
 \@y{\@s{0}%
- vector clock with an entry per datacenter \ensuremath{d \.{\in} Datacenter
-}}%
+ Is \ensuremath{R} transitive\.{?}
+}%
 \@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 42\hspace{1em}} VCInit \.{\defeq} [ d
- \.{\in} Datacenter \.{\mapsto} 0 ]}%
- \@x{\makebox[0pt][r]{\scriptsize 43\hspace{1em}} Merge ( vc1 ,\, vc2 )
- \.{\defeq} [ d \.{\in} Datacenter \.{\mapsto} Max ( vc1 [ d ] ,\, vc2 [ d ]
- ) ]}%
+ \@x{\makebox[0pt][r]{\scriptsize 59\hspace{1em}}\@s{16.4} \.{\LET} S
+ \.{\defeq} Support ( R )}%
+ \@x{\makebox[0pt][r]{\scriptsize 60\hspace{1em}}\@s{16.4} \.{\IN} \forall\, a
+ ,\, b ,\, c \.{\in} S \.{:} ( {\langle} a ,\, b {\rangle} \.{\in} R
+ \.{\land} {\langle} b ,\, c {\rangle} \.{\in} R ) \.{\implies} {\langle} a
+ ,\, c {\rangle} \.{\in} R}%
 \@pvspace{8.0pt}%
- \@x{\makebox[0pt][r]{\scriptsize 45\hspace{1em}} DC \.{\defeq} Cardinality (
- Datacenter )}%
- \@x{\makebox[0pt][r]{\scriptsize 46\hspace{1em}} DCIndex \.{\defeq} {\CHOOSE}
- f \.{\in} [ 1 \.{\dotdot} DC \.{\rightarrow} Datacenter ] \.{:} Injective (
- f )}%
- \@x{\makebox[0pt][r]{\scriptsize 47\hspace{1em}} LTE ( vc1 ,\, vc2 )
+ \@x{\makebox[0pt][r]{\scriptsize 62\hspace{1em}} Respect ( R ,\, T )
  \.{\defeq}}%
 \@y{\@s{0}%
- less-than-or-equal-to comparator for vector clocks
+ Does total order \ensuremath{R} (represented as a sequence) respect
+ \ensuremath{T}\.{?}
 }%
 \@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 48\hspace{1em}}\@s{24.53} \.{\LET}
- {\RECURSIVE} LTEHelper ( \_ ,\, \_ ,\, \_ )}%
- \@x{\makebox[0pt][r]{\scriptsize 49\hspace{1em}}\@s{49.03} LTEHelper ( vc1h
- ,\, vc2h ,\, index ) \.{\defeq}}%
- \@x{\makebox[0pt][r]{\scriptsize 50\hspace{1em}}\@s{65.43} {\IF} index \.{>}
- DC \.{\THEN} {\TRUE}}%
-\@y{\@s{0}%
- \ensuremath{EQ
-}}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 51\hspace{1em}}\@s{65.43} \.{\ELSE} \.{\LET}
- d \.{\defeq} DCIndex [ index ]}%
- \@x{\makebox[0pt][r]{\scriptsize 52\hspace{1em}}\@s{96.74} \.{\IN} {\CASE}
- vc1h [ d ] \.{<} vc2h [ d ] \.{\rightarrow} {\TRUE}\@s{4.1}}%
-\@y{\@s{0}%
- \ensuremath{LT
-}}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 53\hspace{1em}}\@s{125.34} {\Box}\@s{10.30}
- vc1h [ d ] \.{>} vc2h [ d ] \.{\rightarrow} {\FALSE}\@s{1.63}}%
-\@y{\@s{0}%
- \ensuremath{GT
-}}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 54\hspace{1em}}\@s{125.34} {\Box}\@s{10.30}
- {\OTHER} \.{\rightarrow} LTEHelper ( vc1h ,\, vc2h ,\, index \.{+} 1 )}%
- \@x{\makebox[0pt][r]{\scriptsize 55\hspace{1em}}\@s{24.53} \.{\IN}\@s{4.09}
- LTEHelper ( vc1 ,\, vc2 ,\, 1 )}%
-\@pvspace{8.0pt}%
- \@x{\makebox[0pt][r]{\scriptsize 57\hspace{1em}} KVTuple \.{\defeq} [ key
- \.{:} Key ,\, val \.{:} Value \.{\cup} \{ NotVal \} ,\, vc \.{:} VC ]}%
- \@x{\makebox[0pt][r]{\scriptsize 58\hspace{1em}} OpTuple\@s{2.34} \.{\defeq}
- [ type \.{:} \{\@w{R} ,\,\@w{W} \} ,\, kv \.{:} KVTuple ,\, c \.{:} Client
- ,\, cnt \.{:} Nat ]}%
-\@pvspace{8.0pt}%
-\@x{\makebox[0pt][r]{\scriptsize 60\hspace{1em}} Message\@s{3.08} \.{\defeq}}%
- \@x{\makebox[0pt][r]{\scriptsize 61\hspace{1em}}\@s{43.99} [ type \.{:}
- \{\@w{ReadRequest} \} ,\, key \.{:} Key ,\, vc \.{:} VC ,\, c \.{:} Client
- ,\, p \.{:} Partition ,\, d \.{:} Datacenter ]}%
- \@x{\makebox[0pt][r]{\scriptsize 62\hspace{1em}}\@s{16.4} \.{\cup}\@s{16.48}
- [ type \.{:} \{\@w{ReadReply} \} ,\, val \.{:} Value \.{\cup} \{ NotVal \}
- ,\, vc \.{:} VC ,\, c \.{:} Client ]}%
- \@x{\makebox[0pt][r]{\scriptsize 63\hspace{1em}}\@s{16.4} \.{\cup}\@s{16.48}
- [ type \.{:} \{\@w{UpdateRequest} \} ,\, key \.{:} Key ,\, val \.{:} Value
- ,\, vc \.{:} VC ,\, c \.{:} Client ,\, p \.{:} Partition ,\, d \.{:}
- Datacenter ]}%
- \@x{\makebox[0pt][r]{\scriptsize 64\hspace{1em}}\@s{16.4} \.{\cup}\@s{16.48}
- [ type \.{:} \{\@w{UpdateReply} \} ,\, ts \.{:} Nat ,\, c \.{:} Client ,\, d
- \.{:} Datacenter ]}%
- \@x{\makebox[0pt][r]{\scriptsize 65\hspace{1em}}\@s{16.4} \.{\cup}\@s{16.48}
- [ type \.{:} \{\@w{Replicate} \} ,\, d\@s{3.23} \.{:} Datacenter ,\, kv
- \.{:} KVTuple ]}%
- \@x{\makebox[0pt][r]{\scriptsize 66\hspace{1em}}\@s{16.4} \.{\cup}\@s{16.48}
- [ type \.{:} \{\@w{Heartbeat} \} ,\, d \.{:} Datacenter ,\, ts\@s{2.04}
- \.{:} Nat ]}%
-\@pvspace{8.0pt}%
- \@x{\makebox[0pt][r]{\scriptsize 68\hspace{1em}} Send ( m ) \.{\defeq} msgs
- \.{'} \.{=} msgs \.{\cup} \{ m \}}%
- \@x{\makebox[0pt][r]{\scriptsize 69\hspace{1em}} SendAndDelete ( sm ,\, dm )
- \.{\defeq} msgs \.{'} \.{=} ( msgs \.{\cup} \{ sm \} ) \.{\,\backslash\,} \{
- dm \}}%
-\@pvspace{8.0pt}%
-\@x{\makebox[0pt][r]{\scriptsize 71\hspace{1em}} TypeOK \.{\defeq}}%
- \@x{\makebox[0pt][r]{\scriptsize 72\hspace{1em}}\@s{16.4} \.{\land}\@s{9.74}
- cvc \.{\in} [ Client \.{\rightarrow} VC ]}%
- \@x{\makebox[0pt][r]{\scriptsize 73\hspace{1em}}\@s{16.4} \.{\land}\@s{9.74}
- clock \.{\in} [ Partition \.{\rightarrow} [ Datacenter \.{\rightarrow} Nat ]
- ]}%
- \@x{\makebox[0pt][r]{\scriptsize 74\hspace{1em}}\@s{16.4} \.{\land}\@s{9.74}
- pvc \.{\in} [ Partition \.{\rightarrow} [ Datacenter \.{\rightarrow} VC ] ]}%
- \@x{\makebox[0pt][r]{\scriptsize 75\hspace{1em}}\@s{16.4} \.{\land}\@s{9.74}
- css\@s{1.27} \.{\in} [ Partition \.{\rightarrow} [ Datacenter
- \.{\rightarrow} VC ] ]}%
- \@x{\makebox[0pt][r]{\scriptsize 76\hspace{1em}}\@s{16.4} \.{\land}\@s{9.74}
- store \.{\in} [ Partition \.{\rightarrow} [ Datacenter \.{\rightarrow}
- {\SUBSET} KVTuple ] ]}%
- \@x{\makebox[0pt][r]{\scriptsize 77\hspace{1em}}\@s{16.4} \.{\land}\@s{9.74}
- msgs \.{\subseteq} Message}%
- \@x{\makebox[0pt][r]{\scriptsize 78\hspace{1em}}\@s{16.4} \.{\land}\@s{9.74}
- incoming \.{\in} [ Partition \.{\rightarrow} [ Datacenter \.{\rightarrow}
- Seq ( Message ) ] ]}%
- \@x{\makebox[0pt][r]{\scriptsize 79\hspace{1em}}\@s{16.4} \.{\land}\@s{9.74}
- L \.{\in} [ Client \.{\rightarrow} Seq ( OpTuple ) ]}%
-\@x{\makebox[0pt][r]{\scriptsize 80\hspace{1em}}}\midbar\@xx{}%
-\@x{\makebox[0pt][r]{\scriptsize 81\hspace{1em}} Init \.{\defeq}}%
- \@x{\makebox[0pt][r]{\scriptsize 82\hspace{1em}}\@s{16.4} \.{\land} cvc \.{=}
- [ c \.{\in} Client \.{\mapsto} VCInit ]}%
- \@x{\makebox[0pt][r]{\scriptsize 83\hspace{1em}}\@s{16.4} \.{\land} clock
- \.{=} [ p \.{\in} Partition \.{\mapsto} [ d \.{\in} Datacenter \.{\mapsto} 0
- ] ]}%
- \@x{\makebox[0pt][r]{\scriptsize 84\hspace{1em}}\@s{16.4} \.{\land} pvc \.{=}
- [ p \.{\in} Partition \.{\mapsto} [ d \.{\in} Datacenter \.{\mapsto} VCInit
- ] ]}%
- \@x{\makebox[0pt][r]{\scriptsize 85\hspace{1em}}\@s{16.4} \.{\land}
- css\@s{1.27} \.{=} [ p \.{\in} Partition \.{\mapsto} [ d \.{\in} Datacenter
- \.{\mapsto} VCInit ] ]}%
- \@x{\makebox[0pt][r]{\scriptsize 86\hspace{1em}}\@s{16.4} \.{\land} store
- \.{=} [ p \.{\in} Partition \.{\mapsto} [ d \.{\in} Datacenter \.{\mapsto}}%
- \@x{\makebox[0pt][r]{\scriptsize 87\hspace{1em}}\@s{79.14} [ key \.{:} \{ k
- \.{\in} Key \.{:} KeySharding [ k ] \.{=} p \} ,\, val \.{:} \{ NotVal \}
- ,\, vc \.{:} \{ VCInit \} ] ] ]}%
- \@x{\makebox[0pt][r]{\scriptsize 88\hspace{1em}}\@s{16.4} \.{\land} msgs
- \.{=} \{ \}}%
- \@x{\makebox[0pt][r]{\scriptsize 89\hspace{1em}}\@s{16.4} \.{\land} incoming
- \.{=} [ p \.{\in} Partition \.{\mapsto} [ d \.{\in} Datacenter \.{\mapsto}
- {\langle} {\rangle} ] ]}%
- \@x{\makebox[0pt][r]{\scriptsize 90\hspace{1em}}\@s{16.4} \.{\land} L \.{=} [
- c \.{\in} Client \.{\mapsto} {\langle} {\rangle} ]}%
-\@x{\makebox[0pt][r]{\scriptsize 91\hspace{1em}}}\midbar\@xx{}%
-\@x{\makebox[0pt][r]{\scriptsize 92\hspace{1em}}}%
-\@y{\@s{0}%
- Client operations at client \ensuremath{c \.{\in} Client}.
+ \@x{\makebox[0pt][r]{\scriptsize 63\hspace{1em}}\@s{16.4} ( T \.{\,|\,} Range
+ ( R ) ) \.{\subseteq} SeqToRel ( R )}%
+\@x{\makebox[0pt][r]{\scriptsize 64\hspace{1em}}}\bottombar\@xx{}%
+\setboolean{shading}{false}
+\begin{lcom}{0}%
+\begin{cpar}{0}{F}{F}{0}{0}{}%
+\ensuremath{\.{\,\backslash\,}}* Modification History
+\end{cpar}%
+\begin{cpar}{0}{F}{F}{0}{0}{}%
+ \ensuremath{\.{\,\backslash\,}}* Last modified \ensuremath{Mon}
+ \ensuremath{Jan} 27 14:06:50 \ensuremath{CST} 2020 by \ensuremath{hengxin
 }%
-\@xx{}%
-\@pvspace{8.0pt}%
- \@x{\makebox[0pt][r]{\scriptsize 94\hspace{1em}} CanIssue ( c ) \.{\defeq}
- \A\, m \.{\in} msgs \.{:}}%
-\@y{\@s{0}%
- to ensure well-formedness of clients
+\end{cpar}%
+\begin{cpar}{0}{F}{F}{0}{0}{}%
+ \ensuremath{\.{\,\backslash\,}}* Created \ensuremath{Tue} \ensuremath{Sep} 18
+ 19:16:04 \ensuremath{CST} 2018 by \ensuremath{hengxin
 }%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 95\hspace{1em}}\@s{16.4} m . type \.{\in}
- \{\@w{ReadRequest} ,\,\@w{ReadReply} ,\,\@w{UpdateRequest}
- ,\,\@w{UpdateReply} \} \.{\implies} m . c \.{\neq} c}%
-\@pvspace{8.0pt}%
-\@x{\makebox[0pt][r]{\scriptsize 97\hspace{1em}} Read ( c ,\, k ) \.{\defeq}}%
-\@y{\@s{0}%
- \ensuremath{c \.{\in} Client} reads from \ensuremath{k \.{\in} Key
-}}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 98\hspace{1em}}\@s{22.12} \.{\land} CanIssue
- ( c )}%
- \@x{\makebox[0pt][r]{\scriptsize 99\hspace{1em}}\@s{22.12} \.{\land} Send ( [
- type \.{\mapsto}\@w{ReadRequest} ,\, key \.{\mapsto} k ,\, vc \.{\mapsto}
- cvc [ c ] ,\,}%
- \@x{\makebox[0pt][r]{\scriptsize 100\hspace{1em}}\@s{61.89} c \.{\mapsto} c
- ,\, p \.{\mapsto} KeySharding [ k ] ,\, d \.{\mapsto} ClientAttachment [ c ]
- ] )}%
- \@x{\makebox[0pt][r]{\scriptsize 101\hspace{1em}}\@s{22.12} \.{\land}
- {\UNCHANGED} {\langle} cVars ,\, sVars ,\, incoming {\rangle}}%
-\@pvspace{8.0pt}%
-\@x{\makebox[0pt][r]{\scriptsize 103\hspace{1em}} ReadReply ( c ) \.{\defeq}}%
-\@y{\@s{0}%
- \ensuremath{c \.{\in} Client} handles the reply to its read request
-}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 104\hspace{1em}}\@s{16.4} \.{\land} \E\, m
- \.{\in} msgs \.{:}}%
- \@x{\makebox[0pt][r]{\scriptsize 105\hspace{1em}}\@s{31.61} \.{\land} m .
- type \.{=}\@w{ReadReply} \.{\land} m . c \.{=} c\@s{4.1}}%
-\@y{\@s{0}%
- such \ensuremath{m} is unique due to well-formedness
-}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 106\hspace{1em}}\@s{31.61} \.{\land} cvc
- \.{'} \.{=} [ cvc {\EXCEPT} {\bang} [ c ] \.{=} Merge ( m . vc ,\, @ ) ]}%
- \@x{\makebox[0pt][r]{\scriptsize 107\hspace{1em}}\@s{31.61} \.{\land} msgs
- \.{'} \.{=} msgs \.{\,\backslash\,} \{ m \}}%
- \@x{\makebox[0pt][r]{\scriptsize 108\hspace{1em}}\@s{16.4} \.{\land}
- {\UNCHANGED} {\langle} sVars ,\, incoming {\rangle}}%
-\@pvspace{8.0pt}%
- \@x{\makebox[0pt][r]{\scriptsize 110\hspace{1em}} Update ( c ,\, k ,\, v )
- \.{\defeq}}%
-\@y{\@s{0}%
- \ensuremath{c \.{\in} Client} updates \ensuremath{k \.{\in} Key} with
- \ensuremath{v \.{\in} Value
-}}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 111\hspace{1em}}\@s{16.4} \.{\land} CanIssue
- ( c )}%
- \@x{\makebox[0pt][r]{\scriptsize 112\hspace{1em}}\@s{16.4} \.{\land} Send ( [
- type \.{\mapsto}\@w{UpdateRequest} ,\, key \.{\mapsto} k ,\, val \.{\mapsto}
- v ,\,}%
- \@x{\makebox[0pt][r]{\scriptsize 113\hspace{1em}}\@s{56.16} vc \.{\mapsto}
- cvc [ c ] ,\, c \.{\mapsto} c ,\, p \.{\mapsto} KeySharding [ k ] ,\, d
- \.{\mapsto} ClientAttachment [ c ] ] )}%
- \@x{\makebox[0pt][r]{\scriptsize 114\hspace{1em}}\@s{16.4} \.{\land}
- {\UNCHANGED} {\langle} cVars ,\, sVars ,\, incoming {\rangle}}%
-\@pvspace{8.0pt}%
- \@x{\makebox[0pt][r]{\scriptsize 116\hspace{1em}} UpdateReply ( c )
- \.{\defeq}}%
-\@y{\@s{0}%
- \ensuremath{c \.{\in} Client} handles the reply to its update request
-}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 117\hspace{1em}}\@s{16.4} \.{\land} \E\, m
- \.{\in} msgs \.{:}}%
- \@x{\makebox[0pt][r]{\scriptsize 118\hspace{1em}}\@s{31.61} \.{\land} m .
- type \.{=}\@w{UpdateReply} \.{\land} m . c \.{=} c}%
-\@y{\@s{0}%
- such \ensuremath{m} is unique due to well-formedness
-}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 119\hspace{1em}}\@s{31.61} \.{\land} cvc
- \.{'} \.{=} [ cvc {\EXCEPT} {\bang} [ c ] [ m . d ] \.{=} m . ts ]}%
- \@x{\makebox[0pt][r]{\scriptsize 120\hspace{1em}}\@s{31.61} \.{\land} msgs
- \.{'} \.{=} msgs \.{\,\backslash\,} \{ m \}}%
- \@x{\makebox[0pt][r]{\scriptsize 121\hspace{1em}}\@s{16.4} \.{\land}
- {\UNCHANGED} {\langle} sVars ,\, incoming {\rangle}}%
-\@x{\makebox[0pt][r]{\scriptsize 122\hspace{1em}}}\midbar\@xx{}%
-\@x{\makebox[0pt][r]{\scriptsize 123\hspace{1em}}}%
-\@y{\@s{0}%
- Server operations at partition \ensuremath{p \.{\in} Partition} in
- datacenter \ensuremath{d \.{\in} Datacenter}.
-}%
-\@xx{}%
-\@pvspace{8.0pt}%
- \@x{\makebox[0pt][r]{\scriptsize 125\hspace{1em}} ReadRequest ( p ,\, d )
- \.{\defeq}}%
-\@y{\@s{0}%
- handle a \ensuremath{\@w{ReadRequest}
-}}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 126\hspace{1em}}\@s{16.4} \.{\land} \E\, m
- \.{\in} msgs \.{:}}%
- \@x{\makebox[0pt][r]{\scriptsize 127\hspace{1em}}\@s{31.61} \.{\land} m .
- type \.{=}\@w{ReadRequest} \.{\land} m . p \.{=} p \.{\land} m . d \.{=} d}%
- \@x{\makebox[0pt][r]{\scriptsize 128\hspace{1em}}\@s{31.61} \.{\land} css
- \.{'} \.{=} [ css {\EXCEPT} {\bang} [ p ] [ d ] \.{=} Merge ( m . vc ,\, @ )
- ]}%
- \@x{\makebox[0pt][r]{\scriptsize 129\hspace{1em}}\@s{31.61} \.{\land}
- \.{\LET} kvs \.{\defeq} \{ kv \.{\in} store [ p ] [ d ] \.{:}}%
- \@x{\makebox[0pt][r]{\scriptsize 130\hspace{1em}}\@s{105.22} \.{\land} kv .
- key \.{=} m . key}%
- \@x{\makebox[0pt][r]{\scriptsize 131\hspace{1em}}\@s{105.22} \.{\land} \A\,
- dc \.{\in} Datacenter \.{\,\backslash\,} \{ d \} \.{:} kv . vc [ dc ]
- \.{\leq} css \.{'} [ p ] [ d ] [ dc ] \}}%
- \@x{\makebox[0pt][r]{\scriptsize 132\hspace{1em}}\@s{63.12} lkv\@s{1.27}
- \.{\defeq} {\CHOOSE} kv \.{\in} kvs \.{:} \A\, akv \.{\in} kvs \.{:} LTE (
- akv . vc ,\, kv . vc )}%
- \@x{\makebox[0pt][r]{\scriptsize 133\hspace{1em}}\@s{42.72} \.{\IN} \.{\land}
- SendAndDelete ( [ type \.{\mapsto}\@w{ReadReply} ,\, val \.{\mapsto} lkv .
- val ,\, vc \.{\mapsto} lkv . vc ,\, c \.{\mapsto} m . c ] ,\, m )}%
- \@x{\makebox[0pt][r]{\scriptsize 134\hspace{1em}}\@s{63.12} \.{\land} L \.{'}
- \.{=} [ L {\EXCEPT} {\bang} [ m . c ] \.{=} Append ( @ ,\, [ type
- \.{\mapsto}\@w{R} ,\, kv \.{\mapsto} lkv ,\, c \.{\mapsto} m . c ,\, cnt
- \.{\mapsto} Len ( @ ) \.{+} 1 ] ) ]}%
- \@x{\makebox[0pt][r]{\scriptsize 135\hspace{1em}}\@s{16.4} \.{\land}
- {\UNCHANGED} {\langle} cVars ,\, clock ,\, pvc ,\, store ,\, incoming
- {\rangle}}%
-\@pvspace{8.0pt}%
- \@x{\makebox[0pt][r]{\scriptsize 137\hspace{1em}} UpdateRequest ( p ,\, d )
- \.{\defeq}}%
-\@y{\@s{0}%
- handle a \ensuremath{\@w{UpdateRequest}
-}}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 138\hspace{1em}}\@s{16.4} \.{\land} \E\, m
- \.{\in} msgs \.{:}}%
- \@x{\makebox[0pt][r]{\scriptsize 139\hspace{1em}}\@s{31.61} \.{\land} m .
- type \.{=}\@w{UpdateRequest} \.{\land} m . p \.{=} p \.{\land} m . d \.{=}
- d}%
- \@x{\makebox[0pt][r]{\scriptsize 140\hspace{1em}}\@s{31.61} \.{\land} m . vc
- [ d ] \.{<} clock [ p ] [ d ]\@s{4.1}}%
-\@y{\@s{0}%
- waiting condition; (``\ensuremath{\.{\leq}}'' strengthed to
- ``\ensuremath{\.{<}}'')
-}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 141\hspace{1em}}\@s{31.61} \.{\land} css
- \.{'} \.{=} [ css {\EXCEPT} {\bang} [ p ] [ d ] \.{=} Merge ( m . vc ,\, @ )
- ]}%
- \@x{\makebox[0pt][r]{\scriptsize 142\hspace{1em}}\@s{31.61} \.{\land}
- \.{\LET} kv \.{\defeq} [ key \.{\mapsto} m . key ,\, val \.{\mapsto} m . val
- ,\,}%
- \@x{\makebox[0pt][r]{\scriptsize 143\hspace{1em}}\@s{99.16} vc\@s{1.07}
- \.{\mapsto} [ m . vc {\EXCEPT} {\bang} [ d ] \.{=} clock [ p ] [ d ] ] ]}%
- \@x{\makebox[0pt][r]{\scriptsize 144\hspace{1em}}\@s{42.72} \.{\IN} \.{\land}
- store \.{'} \.{=} [ store {\EXCEPT} {\bang} [ p ] [ d ]\@s{2.22} \.{=} @
- \.{\cup} \{ kv \} ]}%
- \@x{\makebox[0pt][r]{\scriptsize 145\hspace{1em}}\@s{63.12} \.{\land}
- SendAndDelete ( [ type \.{\mapsto}\@w{UpdateReply} ,\, ts \.{\mapsto} clock
- [ p ] [ d ] ,\, c \.{\mapsto} m . c ,\, d \.{\mapsto} d ] ,\, m )}%
- \@x{\makebox[0pt][r]{\scriptsize 146\hspace{1em}}\@s{63.12} \.{\land}
- incoming \.{'} \.{=} [ incoming {\EXCEPT} {\bang} [ p ] \.{=} [ dc \.{\in}
- Datacenter \.{\mapsto}}%
- \@x{\makebox[0pt][r]{\scriptsize 147\hspace{1em}}\@s{82.43} {\IF} dc \.{=} d
- \.{\THEN} @ [ dc ] \.{\ELSE} Append ( @ [ dc ] ,\, [ type
- \.{\mapsto}\@w{Replicate} ,\, d \.{\mapsto} d ,\, kv \.{\mapsto} kv ] ) ] ]}%
- \@x{\makebox[0pt][r]{\scriptsize 148\hspace{1em}}\@s{63.12} \.{\land} L \.{'}
- \.{=} [ L {\EXCEPT} {\bang} [ m . c ] \.{=} Append ( @ ,\, [ type
- \.{\mapsto}\@w{W} ,\, kv \.{\mapsto} kv ,\, c \.{\mapsto} m . c ,\, cnt
- \.{\mapsto} Len ( @ ) \.{+} 1 ] ) ]}%
- \@x{\makebox[0pt][r]{\scriptsize 149\hspace{1em}}\@s{16.4} \.{\land}
- {\UNCHANGED} {\langle} cVars ,\, clock ,\, pvc {\rangle}}%
-\@pvspace{8.0pt}%
- \@x{\makebox[0pt][r]{\scriptsize 151\hspace{1em}} Replicate ( p ,\, d )
- \.{\defeq}}%
-\@y{\@s{0}%
- handle a \ensuremath{\@w{Replicate}
-}}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 152\hspace{1em}}\@s{16.4} \.{\land} incoming
- [ p ] [ d ] \.{\neq} {\langle} {\rangle}}%
- \@x{\makebox[0pt][r]{\scriptsize 153\hspace{1em}}\@s{16.4} \.{\land} \.{\LET}
- m \.{\defeq} Head ( incoming [ p ] [ d ] )}%
- \@x{\makebox[0pt][r]{\scriptsize 154\hspace{1em}}\@s{27.51} \.{\IN} \.{\land}
- m . type \.{=}\@w{Replicate}}%
- \@x{\makebox[0pt][r]{\scriptsize 155\hspace{1em}}\@s{47.91} \.{\land} store
- \.{'}\@s{5.46} \.{=} [ store {\EXCEPT} {\bang} [ p ] [ d ] \.{=} @ \.{\cup}
- \{ m . kv \} ]}%
- \@x{\makebox[0pt][r]{\scriptsize 156\hspace{1em}}\@s{47.91} \.{\land} pvc
- \.{'} \.{=} [ pvc {\EXCEPT} {\bang} [ p ] [ d ] [ m . d ] \.{=} m . kv . vc
- [ m . d ] ]}%
- \@x{\makebox[0pt][r]{\scriptsize 157\hspace{1em}}\@s{47.91} \.{\land}
- incoming \.{'} \.{=} [ incoming {\EXCEPT} {\bang} [ p ] [ d ] \.{=} Tail ( @
- ) ]}%
- \@x{\makebox[0pt][r]{\scriptsize 158\hspace{1em}}\@s{16.4} \.{\land}
- {\UNCHANGED} {\langle} cVars ,\, cvc ,\, clock ,\, css ,\, L ,\, msgs
- {\rangle}}%
-\@pvspace{8.0pt}%
- \@x{\makebox[0pt][r]{\scriptsize 160\hspace{1em}} Heartbeat ( p ,\, d )
- \.{\defeq}}%
-\@y{\@s{0}%
- handle a \ensuremath{\@w{Heartbeat}
-}}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 161\hspace{1em}}\@s{16.4} \.{\land} incoming
- [ p ] [ d ] \.{\neq} {\langle} {\rangle}}%
- \@x{\makebox[0pt][r]{\scriptsize 162\hspace{1em}}\@s{16.4} \.{\land} \.{\LET}
- m \.{\defeq} Head ( incoming [ p ] [ d ] )}%
- \@x{\makebox[0pt][r]{\scriptsize 163\hspace{1em}}\@s{27.51} \.{\IN} \.{\land}
- m . type \.{=}\@w{Heartbeat}}%
- \@x{\makebox[0pt][r]{\scriptsize 164\hspace{1em}}\@s{47.91} \.{\land} pvc
- \.{'} \.{=} [ pvc {\EXCEPT} {\bang} [ p ] [ d ] [ m . d ] \.{=} m . ts ]}%
- \@x{\makebox[0pt][r]{\scriptsize 165\hspace{1em}}\@s{47.91} \.{\land}
- incoming \.{'} \.{=} [ incoming {\EXCEPT} {\bang} [ p ] [ d ] \.{=} Tail ( @
- ) ]}%
- \@x{\makebox[0pt][r]{\scriptsize 166\hspace{1em}}\@s{16.4} \.{\land}
- {\UNCHANGED} {\langle} cVars ,\, cvc ,\, clock ,\, css ,\, store ,\, L ,\,
- msgs {\rangle}}%
-\@x{\makebox[0pt][r]{\scriptsize 167\hspace{1em}}}\midbar\@xx{}%
-\@x{\makebox[0pt][r]{\scriptsize 168\hspace{1em}}}%
-\@y{\@s{0}%
- Clock management at partition \ensuremath{p \.{\in} Partition} in datacenter
- \ensuremath{d \.{\in} Datacenter
-}}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 169\hspace{1em}} Tick ( p ,\, d )
- \.{\defeq}}%
-\@y{\@s{0}%
- \ensuremath{clock[p][d]} ticks
-}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 170\hspace{1em}}\@s{20.49} \.{\land} clock
- \.{'} \.{=} [ clock {\EXCEPT} {\bang} [ p ] [ d ] \.{=} @ \.{+} 1 ]}%
- \@x{\makebox[0pt][r]{\scriptsize 171\hspace{1em}}\@s{20.49} \.{\land} pvc
- \.{'} \.{=} [ pvc {\EXCEPT} {\bang} [ p ] [ d ] [ d ] \.{=} clock \.{'} [ p
- ] [ d ] ]}%
- \@x{\makebox[0pt][r]{\scriptsize 172\hspace{1em}}\@s{20.49} \.{\land}
- incoming \.{'} \.{=} [ incoming {\EXCEPT} {\bang} [ p ] \.{=} [ dc \.{\in}
- Datacenter \.{\mapsto}}%
- \@x{\makebox[0pt][r]{\scriptsize 173\hspace{1em}}\@s{39.80} {\IF} dc \.{=} d
- \.{\THEN} @ [ dc ] \.{\ELSE} Append ( @ [ dc ] ,\, [ type
- \.{\mapsto}\@w{Heartbeat} ,\, d \.{\mapsto} d ,\, ts \.{\mapsto} pvc \.{'} [
- p ] [ d ] [ d ] ] ) ] ]}%
- \@x{\makebox[0pt][r]{\scriptsize 174\hspace{1em}}\@s{20.49} \.{\land}
- {\UNCHANGED} {\langle} cVars ,\, cvc ,\, css ,\, store ,\, L ,\, msgs
- {\rangle}}%
-\@pvspace{8.0pt}%
- \@x{\makebox[0pt][r]{\scriptsize 176\hspace{1em}} UpdateCSS ( p ,\, d )
- \.{\defeq}}%
-\@y{\@s{0}%
- update \ensuremath{css[p][d]
-}}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 177\hspace{1em}}\@s{16.4} \.{\land} css
- \.{'} \.{=} [ css {\EXCEPT} {\bang} [ p ] [ d ] \.{=}}%
- \@x{\makebox[0pt][r]{\scriptsize 178\hspace{1em}}\@s{64.12} [ dc \.{\in}
- Datacenter \.{\mapsto} SetMin ( \{ pvc [ pp ] [ d ] [ dc ] \.{:} pp \.{\in}
- Partition \} ) ] ]}%
- \@x{\makebox[0pt][r]{\scriptsize 179\hspace{1em}}\@s{16.4} \.{\land}
- {\UNCHANGED} {\langle} cVars ,\, mVars ,\, clock ,\, pvc ,\, store ,\, L
- {\rangle}}%
-\@x{\makebox[0pt][r]{\scriptsize 180\hspace{1em}}}\midbar\@xx{}%
-\@x{\makebox[0pt][r]{\scriptsize 181\hspace{1em}} Next \.{\defeq}}%
- \@x{\makebox[0pt][r]{\scriptsize 182\hspace{1em}}\@s{16.4} \.{\lor} \E\,
- c\@s{0.57} \.{\in} Client ,\, k \.{\in} Key \.{:} Read ( c ,\, k )}%
- \@x{\makebox[0pt][r]{\scriptsize 183\hspace{1em}}\@s{16.4} \.{\lor} \E\,
- c\@s{0.57} \.{\in} Client ,\, k \.{\in} Key ,\, v \.{\in} Value \.{:} Update
- ( c ,\, k ,\, v )}%
- \@x{\makebox[0pt][r]{\scriptsize 184\hspace{1em}}\@s{16.4} \.{\lor} \E\,
- c\@s{0.57} \.{\in} Client \.{:} ReadReply ( c ) \.{\lor} UpdateReply ( c )}%
- \@x{\makebox[0pt][r]{\scriptsize 185\hspace{1em}}\@s{16.4} \.{\lor} \E\, p
- \.{\in} Partition ,\, d \.{\in} Datacenter \.{:}}%
- \@x{\makebox[0pt][r]{\scriptsize 186\hspace{1em}}\@s{31.61} \.{\lor}
- ReadRequest ( p ,\, d )}%
- \@x{\makebox[0pt][r]{\scriptsize 187\hspace{1em}}\@s{31.61} \.{\lor}
- UpdateRequest ( p ,\, d )}%
- \@x{\makebox[0pt][r]{\scriptsize 188\hspace{1em}}\@s{31.61} \.{\lor}
- Replicate ( p ,\, d )}%
- \@x{\makebox[0pt][r]{\scriptsize 189\hspace{1em}}\@s{31.61} \.{\lor}
- Heartbeat ( p ,\, d )}%
- \@x{\makebox[0pt][r]{\scriptsize 190\hspace{1em}}\@s{31.61} \.{\lor} Tick ( p
- ,\, d )}%
- \@x{\makebox[0pt][r]{\scriptsize 191\hspace{1em}}\@s{31.61} \.{\lor}
- UpdateCSS ( p ,\, d )}%
-\@pvspace{8.0pt}%
- \@x{\makebox[0pt][r]{\scriptsize 193\hspace{1em}} Spec \.{\defeq} Init
- \.{\land} {\Box} [ Next ]_{ vars}}%
-\@x{\makebox[0pt][r]{\scriptsize 194\hspace{1em}}}\midbar\@xx{}%
-\@x{\makebox[0pt][r]{\scriptsize 195\hspace{1em}} Valid ( s ) \.{\defeq}}%
-\@y{\@s{0}%
- Is \ensuremath{s} a valid serialization\.{?}
-}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 196\hspace{1em}}\@s{16.4} \.{\LET}
- {\RECURSIVE} ValidHelper ( \_ ,\, \_ )}%
- \@x{\makebox[0pt][r]{\scriptsize 197\hspace{1em}}\@s{40.89} ValidHelper ( seq
- ,\, kvs ) \.{\defeq}}%
- \@x{\makebox[0pt][r]{\scriptsize 198\hspace{1em}}\@s{57.29} {\IF} seq \.{=}
- {\langle} {\rangle} \.{\THEN} {\TRUE}}%
- \@x{\makebox[0pt][r]{\scriptsize 199\hspace{1em}}\@s{57.29} \.{\ELSE}
- \.{\LET} op \.{\defeq} Head ( seq )}%
- \@x{\makebox[0pt][r]{\scriptsize 200\hspace{1em}}\@s{88.61} \.{\IN} {\IF} op
- . type \.{=}\@w{W}\@s{131.2}}%
-\@y{\@s{0}%
- overwritten
-}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 201\hspace{1em}}\@s{109.01} \.{\THEN}
- ValidHelper ( Tail ( seq ) ,\, op . kv . key \.{\colongt} op . kv . vc
- \.{\,@@\,} kvs )}%
- \@x{\makebox[0pt][r]{\scriptsize 202\hspace{1em}}\@s{109.01} \.{\ELSE}
- \.{\land} op . kv . vc \.{=} kvs [ op . kv . key ]}%
- \@x{\makebox[0pt][r]{\scriptsize 203\hspace{1em}}\@s{140.32} \.{\land}
- ValidHelper ( Tail ( seq ) ,\, kvs )}%
- \@x{\makebox[0pt][r]{\scriptsize 204\hspace{1em}}\@s{16.4} \.{\IN}\@s{4.09}
- ValidHelper ( s ,\, [ k \.{\in} Key \.{\mapsto} VCInit ] )\@s{4.1}}%
-\@y{\@s{0}%
- with initial values
-}%
-\@xx{}%
-\@pvspace{8.0pt}%
-\@x{\makebox[0pt][r]{\scriptsize 206\hspace{1em}} CM \.{\defeq}}%
-\@y{\@s{0}%
- causal memory consistency model; see
- \ensuremath{Ahamad}@\ensuremath{DC\.{'}}1995
-}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 207\hspace{1em}}\@s{21.86} \.{\LET} ops
- \.{\defeq} {\UNION} \{ Range ( L [ c ] ) \.{:} c \.{\in} Client \}}%
- \@x{\makebox[0pt][r]{\scriptsize 208\hspace{1em}}\@s{42.26} rops\@s{2.93}
- \.{\defeq} \{ op \.{\in} ops \.{:} op . type\@s{11.23} \.{=}\@w{R} \}}%
- \@x{\makebox[0pt][r]{\scriptsize 209\hspace{1em}}\@s{42.26} wops \.{\defeq}
- \{ op \.{\in} ops \.{:} op . type\@s{11.23} \.{=}\@w{W} \}}%
- \@x{\makebox[0pt][r]{\scriptsize 210\hspace{1em}}\@s{42.26} so\@s{4.09}
- \.{\defeq} {\UNION} \{ SeqToRel ( L [ c ] ) \.{:} c \.{\in} Client \}}%
-\@y{\@s{0}%
- session order
-}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 211\hspace{1em}}\@s{42.26} rf\@s{4.52}
- \.{\defeq} \{ {\langle} w ,\, r {\rangle} \.{\in} wops \.{\times} rops \.{:}
- w . kv . key \.{=} r . kv . key \.{\land} w . kv . vc \.{=} r . kv . vc \}}%
- \@x{\makebox[0pt][r]{\scriptsize 212\hspace{1em}}\@s{46.36} co \.{\defeq} TC
- ( so \.{\cup} rf )}%
-\@y{\@s{0}%
- causality order
-}%
-\@xx{}%
- \@x{\makebox[0pt][r]{\scriptsize 213\hspace{1em}}\@s{21.86} \.{\IN}\@s{4.09}
- \A\, c \.{\in} Client \.{:}}%
- \@x{\makebox[0pt][r]{\scriptsize 214\hspace{1em}}\@s{57.68} \E\, sc \.{\in}
- PermutationsOf ( L [ c ] \.{\circ} SetToSeq ( wops ) ) \.{:}}%
- \@x{\makebox[0pt][r]{\scriptsize 215\hspace{1em}}\@s{69.00} \.{\land} Valid (
- sc )}%
- \@x{\makebox[0pt][r]{\scriptsize 216\hspace{1em}}\@s{69.00} \.{\land} Respect
- ( sc ,\, co )}%
-\@pvspace{8.0pt}%
- \@x{\makebox[0pt][r]{\scriptsize 218\hspace{1em}} {\THEOREM} Spec
- \.{\implies} {\Box} CM}%
-\@x{\makebox[0pt][r]{\scriptsize 219\hspace{1em}}}\bottombar\@xx{}%
+\end{cpar}%
+\end{lcom}%
 \end{document}

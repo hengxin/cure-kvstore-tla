@@ -66,16 +66,21 @@ TLA+ Spec for the Cure Key-Value Store
 - [x] Module `Relation`
   - [x] +`SeqToRel`
 ### 2020-01-26
-- [ ] Handling `NotVal` in `CM`
+- [x] Handling `NotVal` in `CM`
   - [x] Redefine `Valid(s)` with initial values for keys
-- [ ] Testing `CM`
+- [x] Testing `CM`
   - [x] +state constraint: `\A c \in Client: Len(L[c]) <= 3`
-  - [ ] "upon termination only?"
 
 ### 2020-01-27
-- [ ] `S[c]` for serialization
+- [ ] Testing `CM`
+  - [x] FIXME: `Range(seq)` duplicate elements in sequence
+    - [x] +`c : Client, cnt : Nat` in `OpTuple`
+- [ ] `CureKV`: 
 
 ### 2020-01-28
+- [ ] `S[c]` for serialization
+
+### 2020-01-29
 - [ ] `n^5` checking algorithm for CM
 
 ## TODO

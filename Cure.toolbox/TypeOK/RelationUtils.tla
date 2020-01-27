@@ -59,8 +59,9 @@ Transitive(R) == \* Is R transitive?
     LET S == Support(R)     
     IN  \forall a, b, c \in S: (<<a, b>> \in R /\ <<b, c>> \in R) => <<a, c>> \in R
     
-Respect(R, T) == T \subseteq R \* Does R respect T?
+Respect(R, T) == \* Does total order R (represented as a sequence) respect T?
+    (T | Range(R)) \subseteq SeqToRel(R) 
 =============================================================================
 \* Modification History
-\* Last modified Sat Jan 25 15:55:08 CST 2020 by hengxin
+\* Last modified Mon Jan 27 14:06:50 CST 2020 by hengxin
 \* Created Tue Sep 18 19:16:04 CST 2018 by hengxin
