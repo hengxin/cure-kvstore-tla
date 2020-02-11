@@ -210,11 +210,9 @@ CM == \* causal memory consistency model; see Ahamad@DC'1995
         so == UNION {SeqToRel(L[c]): c \in Client} \* session order
         rf == {<<w, r>> \in wops \X rops: w.kv.key = r.kv.key /\ w.kv.vc = r.kv.vc}
         co == TC(so \cup rf) \* causality order
-    IN  /\ PrintT(<<so, rf, co>>)
-        /\ \A c \in Client: 
+    IN  \A c \in Client: 
             \E sc \in PermutationsOf(L[c] \o SetToSeq(wops)):
                 /\ Valid(sc)
-                /\ PrintT(<<sc, co, Respect(sc, co)>>)
                 /\ Respect(sc, co)
                 
 THEOREM Spec => []CM                

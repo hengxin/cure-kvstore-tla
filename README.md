@@ -83,6 +83,9 @@ TLA+ Spec for the Cure Key-Value Store
 ### 2020-01-29
 - [ ] `n^5` checking algorithm for CM
 
+### 2020-01-30
+- [ ] CureKV
+
 ## TODO
 - Version without Heartbeat
   - Check liveness
@@ -93,6 +96,7 @@ TLA+ Spec for the Cure Key-Value Store
     - `css[p][d]` non-decreasing
     - CM
   - Liveness
+
 
 ## TLA+
 - [ ] googlegroup: "checking safety upon termination only?"

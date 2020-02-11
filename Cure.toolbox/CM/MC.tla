@@ -27,45 +27,49 @@ v
 ----
 
 \* MV CONSTANT definitions Client
-const_158011155466722000 == 
+const_1580115177628201000 == 
 {c1, c2}
 ----
 
 \* MV CONSTANT definitions Datacenter
-const_158011155466723000 == 
+const_1580115177628202000 == 
 {d1, d2}
 ----
 
 \* MV CONSTANT definitions Partition
-const_158011155466724000 == 
+const_1580115177628203000 == 
 {p1, p2}
 ----
 
 \* MV CONSTANT definitions Key
-const_158011155466725000 == 
+const_1580115177628204000 == 
 {k1, k2}
 ----
 
 \* MV CONSTANT definitions Value
-const_158011155466726000 == 
+const_1580115177628205000 == 
 {v}
 ----
 
 \* SYMMETRY definition
-symm_158011155466727000 == 
-Permutations(const_158011155466722000) \union Permutations(const_158011155466723000) \union Permutations(const_158011155466724000) \union Permutations(const_158011155466725000)
+symm_1580115177628206000 == 
+Permutations(const_1580115177628201000) \union Permutations(const_1580115177628202000) \union Permutations(const_1580115177628203000) \union Permutations(const_1580115177628204000)
 ----
 
 \* CONSTANT definitions @modelParameterConstants:1KeySharding
-const_158011155466728000 == 
+const_1580115177628207000 == 
 k1 :> p1 @@ k2 :> p2
 ----
 
 \* CONSTANT definitions @modelParameterConstants:2ClientAttachment
-const_158011155466729000 == 
+const_1580115177628208000 == 
 c1 :> d1 @@ c2 :> d2
 ----
 
+\* CONSTRAINT definition @modelParameterContraint:0
+constr_1580115177628210000 ==
+\A c \in Client: Len(L[c]) <= 5
+----
 =============================================================================
 \* Modification History
-\* Created Mon Jan 27 15:52:34 CST 2020 by hengxin
+\* Created Mon Jan 27 16:52:57 CST 2020 by hengxin
