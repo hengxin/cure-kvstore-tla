@@ -21,11 +21,6 @@
 			<locationURI>PARENT-1-PROJECT_LOC/Cure.tla</locationURI>
 		</link>
 		<link>
-			<name>FiniteSets.tla</name>
-			<type>1</type>
-			<location>/usr/local/lib/tlaps/FiniteSets.tla</location>
-		</link>
-		<link>
 			<name>FunctionUtils.tla</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/FunctionUtils.tla</locationURI>
@@ -49,6 +44,11 @@
 			<name>SetUtils.tla</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/SetUtils.tla</locationURI>
+		</link>
+		<link>
+			<name>TxCure.tla</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/TxCure.tla</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>
