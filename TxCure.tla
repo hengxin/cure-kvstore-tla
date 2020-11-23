@@ -29,6 +29,9 @@ VARIABLES
     tid,    \* tid[c]: transaction identifier of the current ongoing transaction of client c \in Client
     coord,  \* coord[c]: coordinator (partition) of the current ongoing transaction of client c \in Client
 (* At the server side (each for partition p \in Partition in d \in Datacenter): *)
+    rs,         \* rs[p][d][tid][i]: read set of transaction tid, indexed by partition i \in Partition
+    ws,         \* ws[p][d][tid][i]: write set of transaction tid, indexed by partition i \in Partition
+    seq,        \* seq[p][d]: seq number
     opLog,      \* opLog[p][d]: log
     clock,      \* clock[p][d]: current clock
     knownVC,    \* knownVC[p][d]: vector clock
@@ -51,7 +54,7 @@ Tid == [seq : Nat, p : Partition, d : Datacenter] \* transaction identifier
 
 VC == [Datacenter -> Nat]  \* vector clock with an entry per datacenter d \in Datacenter
 VCInit == [d \in Datacenter |-> 0]
-Merge(vc1, vc2) == [d \in Datacenter |-> Max(vc1[d], vc2[d])]
+Merge(vc1, vc2) == [d \in Datacenter |-> Max(vc1[d], vc2[d])] \* TODO: except d?
 
 DC == Cardinality(Datacenter)
 DCIndex == CHOOSE f \in [1 .. DC -> Datacenter] : Injective(f)
@@ -88,16 +91,20 @@ TypeOK ==
     /\ clock \in [Partition -> [Datacenter -> Nat]]
     /\ knownVC \in [Partition -> [Datacenter -> VC]]
     /\ stableVC \in [Partition -> [Datacenter -> VC]]
+    /\ uniformVC \in [Partition -> [Datacenter -> VC]]
+    /\ snapshotVC \in [Partition -> [Datacenter -> [Tid -> VC]]]
     /\ opLog \in [Partition -> [Datacenter -> SUBSET KVTuple]]
     /\ msgs \subseteq Message
     /\ incoming \in [Partition -> [Datacenter -> Seq(Message)]]
     /\ L \in [Client -> Seq(OpTuple)]
 --------------------------------------------------------------------------
 Init ==
-    /\ cvc = [c \in Client |-> VCInit]   
+    /\ cvc = [c \in Client |-> VCInit]
     /\ clock = [p \in Partition |-> [d \in Datacenter |-> 0]]
     /\ knownVC = [p \in Partition |-> [d \in Datacenter |-> VCInit]]
     /\ stableVC = [p \in Partition |-> [d \in Datacenter |-> VCInit]]
+    /\ uniformVC = [p \in Partition |-> [d \in Datacenter |-> VCInit]]
+    /\ snapshotVC = [p \in Partition |-> [d \in Datacenter |-> [t \in Tid |-> VCInit]]]
     /\ opLog = [p \in Partition |-> [d \in Datacenter |-> 
                     [key : {k \in Key : KeySharding[k] = p}, val : {NotVal}, vc : {VCInit}]]]
     /\ msgs = {}
@@ -167,30 +174,34 @@ CommitReply(c) == \* c \in Client handles the reply to its commit request
 --------------------------------------------------------------------------
 (* Server operations at partition p \in Partition in datacenter d \in Datacenter. *)
 
+StartRequest(p, d) == \* handle a "StartRequest" 
+    /\ \E m \in msgs:
+        /\ m.type = "StartRequest" /\ m.p = p /\ m.d = d
+        /\ uniformVC' = [uniformVC EXCEPT ![p][d] = Merge(m.vc, @)]
+        /\ seq' = [seq EXCEPT ![p][d] = @ + 1]
+        /\ LET t == [seq |-> seq, p |-> p, d |-> d]
+            IN /\ snapshotVC' = [snapshotVC EXCEPT 
+                    ![p][d][t] = [dc \in Datacenter |-> 
+                                    IF dc = d 
+                                    THEN Max(m.vc[d], uniformVC[p][d][d]) 
+                                    ELSE uniformVC'[p][d][d]]]
+               /\ SendAndDelete([type |-> "StartReply", tid |-> t, 
+                                   vc |-> snapshotVC'[p][d][t]], c |-> m.c], m)
+    /\ UNCHANGED <<cVars, clock, knownVC, stableVC, opLog, incoming>>
+
 ReadRequest(p, d) == \* handle a "ReadRequest"
     /\ \E m \in msgs:
         /\ m.type = "ReadRequest" /\ m.p = p /\ m.d = d
-        /\ stableVC' = [stableVC EXCEPT ![p][d] = Merge(m.vc, @)]
-        /\ LET kvs == {kv \in opLog[p][d]: 
-                        /\ kv.key = m.key 
-                        /\ \A dc \in Datacenter \ {d}: kv.vc[dc] <= stableVC'[p][d][dc]}
-               lkv == CHOOSE kv \in kvs: \A akv \in kvs: LTE(akv.vc, kv.vc)
-           IN /\ SendAndDelete([type |-> "ReadReply", val |-> lkv.val, vc |-> lkv.vc, c |-> m.c], m)
-              /\ L' = [L EXCEPT ![m.c] = Append(@, [type |-> "R", kv |-> lkv, c |-> m.c, cnt |-> Len(@) + 1])]
+        /\ SendAndDelete([type |-> "ReadReply", val |-> lkv.val, vc |-> lkv.vc, c |-> m.c], m)
+        \* /\ L' = [L EXCEPT ![m.c] = Append(@, [type |-> "R", kv |-> lkv, c |-> m.c, cnt |-> Len(@) + 1])]
     /\ UNCHANGED <<cVars, clock, knownVC, opLog, incoming>>
 
 UpdateRequest(p, d) == \* handle a "UpdateRequest"
     /\ \E m \in msgs:
         /\ m.type = "UpdateRequest" /\ m.p = p /\ m.d = d
-        /\ m.vc[d] < clock[p][d]  \* waiting condition; ("<=" strengthed to "<")
-        /\ stableVC' = [stableVC EXCEPT ![p][d] = Merge(m.vc, @)]
-        /\ LET kv == [key |-> m.key, val |-> m.val, 
-                       vc |-> [m.vc EXCEPT ![d] = clock[p][d]]]
-           IN /\ opLog' = [opLog EXCEPT ![p][d] = @ \cup {kv}] 
-              /\ SendAndDelete([type |-> "UpdateReply", ts |-> clock[p][d], c |-> m.c, d |-> d], m)
-              /\ incoming' = [incoming EXCEPT ![p] = [dc \in Datacenter |-> 
-                   IF dc = d THEN @[dc] ELSE Append(@[dc], [type |-> "Replicate", d |-> d, kv |-> kv])]]
-              /\ L' = [L EXCEPT ![m.c] = Append(@, [type |-> "W", kv |-> kv, c |-> m.c, cnt |-> Len(@) + 1])]
+        /\ ws' = [ws EXCEPT ![p][d][m.tid][KeySharding[m.key]][m.key] = m.val]
+        /\ SendAndDelete([type |-> "UpdateReply", c |-> m.c], m)
+        \* /\ L' = [L EXCEPT ![m.c] = Append(@, [type |-> "W", kv |-> kv, c |-> m.c, cnt |-> Len(@) + 1])]
     /\ UNCHANGED <<cVars, clock, knownVC>>
     
 Replicate(p, d) == \* handle a "Replicate"
@@ -238,5 +249,5 @@ Next ==
 Spec == Init /\ [][Next]_vars
 =============================================================================
 \* Modification History
-\* Last modified Fri Nov 20 21:27:11 CST 2020 by hengxin
+\* Last modified Mon Nov 23 16:11:35 CST 2020 by hengxin
 \* Created Fri Nov 20 18:51:11 CST 2020 by hengxin
